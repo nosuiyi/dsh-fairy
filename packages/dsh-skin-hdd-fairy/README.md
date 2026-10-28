@@ -42,7 +42,18 @@ HDD 启动动画、会呼吸并周期性"撕裂"的矢量徽记、按小时问�
 
 ## 安装
 
-**装完都还要多做一步**：DSH → **设置 → 皮肤管理 → 切到「HDD Fairy」**。只装不切换，看到的仍是原界面。
+**前置：本皮肤由「皮肤管理器」托管，必须先装它**（只需一次；之后装任何皮肤都不用再装）：
+
+```powershell
+dsh plugin --profile desktop add '@smalltailqwq/dsh-client-ui-skin-deep-whale-manager'
+```
+
+没有管理器，DSH 里**不会出现「设置 → 皮肤管理」页面**，皮肤装了也不可见；皮肤自带的设置项也由它渲染。
+`--profile` 用您自己的 profile 名（本机是 `desktop`，管理器官方示例写的是 `web`），装错 profile 等于白装；
+装完**重启一次** DSH。为什么必需、管理器里哪些设置值得动，见
+[`docs/skin-manager.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/skin-manager.md)。
+
+**然后装本皮肤，装完都还要多做一步**：DSH → **设置 → 皮肤管理 → 切到「HDD Fairy」**。只装不切换，看到的仍是原界面。
 
 > ⚠️ 动手前先备份 `$DSH_HOME/profiles/<profile>/package.json`：`dsh plugin add/remove` 会重写 profile
 > 里的 `dsh.profile.bundles`，实测还会把**其他第三方 bundle 一起从列表里丢掉**。
@@ -122,6 +133,16 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 
 设置值由管理器按 `skinId`（`hdd-fairy`）持久化；本包只实现 `apply(state)`，不写存储。
 `apply(null)` 时会释放本皮肤拥有的一切（CSS、`<body>` 属性、定时器、开屏节点）。
+
+### 管理器里有、但本皮肤用不到的两项
+
+| 管理器功能 | 为什么用不到 |
+|---|---|
+| **桌面图标跟随皮肤**（Windows） | 需要皮肤在 `skin.json` 里声明 `desktopIcon`（包内 `.ico` 路径）。本包**未声明**，开关对本皮肤无效，会还原官方图标 |
+| **不那么二次元模式**（可见时段） | 由皮肤声明 `visibility-schedule` 类型的设置项才会渲染。本包**未声明**，所以页面里没有这一项 |
+
+页面结构、切换的含义与常见问题：
+[`docs/skin-manager.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/skin-manager.md)。
 
 ## 启用时会把外观切成深色
 

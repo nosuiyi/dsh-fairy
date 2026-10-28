@@ -18,7 +18,7 @@ Fairy 徽记、按小时问候与回合提示音，外加深海军蓝的界面�
 |---|---|
 | DSH | 桌面版 **0.2.1-rc.3**（`skin.json#dshCompatibility` = `0.2.1rc3`） |
 | 平台 | 实测 **Windows x64**（Electron 44.7 · Chromium 152）；macOS / Linux 未实测 |
-| 皮肤管理器 | `@smalltailqwq/dsh-client-ui-skin-deep-whale-manager`。皮肤互斥：启用本皮肤会停用其他皮肤 |
+| 皮肤管理器 | **必装**：[`@smalltailqwq/dsh-client-ui-skin-deep-whale-manager`](https://www.npmjs.com/package/@smalltailqwq/dsh-client-ui-skin-deep-whale-manager)。它注册「设置 → 皮肤管理」页面，负责发现、互斥切换与渲染皮肤自己的设置项；**不装就看不到任何皮肤** |
 | 素材 | 不必准备。完全不放素材也能装、能用：默认**不播开屏**，直接进界面 |
 
 版本不匹配时**预期**的结果是皮肤整块不生效（槽位或 `bodyAttr` 契约变了），而不是报错；
@@ -26,8 +26,24 @@ Fairy 徽记、按小时问候与回合提示音，外加深海军蓝的界面�
 
 ## 安装
 
-前三种任选其一（开发期还有第四种：直接从源码目录装）。**每一种装完都还要多做一步**：
-打开 DSH → **设置 → 皮肤管理 → 切到「HDD Fairy」**。只装不切换，看到的仍是原界面 —— 那不是安装失败。
+### 〇、先装皮肤管理器（只需一次）
+
+```powershell
+dsh plugin --profile desktop add '@smalltailqwq/dsh-client-ui-skin-deep-whale-manager'
+```
+
+它是本皮肤的**前置条件**：DSH 里那个「设置 → 皮肤管理」页面由它注册；皮肤能不能被发现、能不能被切换、
+皮肤自带的设置项能不能被画出来，全部由它管。**没有它，皮肤装了也不可见。**
+
+- `--profile` 换成您自己的 profile 名（本机是 `desktop`；管理器官方示例写的是 `web`），装错 profile 等于白装；
+- 装完**重启一次** DSH —— 管理器在启动时做发现与兜底检测；
+- **两张皮肤不要同时启用**：管理器发现 2 套及以上皮肤同时启用，会回退到官方默认（表现是"什么都没启用"）。
+
+安装细节、关键设置与常见问题：**[`docs/skin-manager.md`](docs/skin-manager.md)**。
+
+**下面三种任选其一**（开发期还有第四种：直接从源码目录装）。
+**每一种装完都还要多做一步**：打开 DSH → **设置 → 皮肤管理 → 切到「HDD Fairy」**。
+只装不切换，看到的仍是原界面 —— 那不是安装失败。
 
 > ⚠️ **动手前先备份** `$DSH_HOME/profiles/<profile>/package.json`。
 > `dsh plugin add/remove`（插件管理器走的是同一套）会重写 profile 里的 `dsh.profile.bundles`，
@@ -138,6 +154,7 @@ assets/
 | 文件 | 是什么 | 什么时候看 |
 |---|---|---|
 | [`docs/asset-convention.md`](docs/asset-convention.md) | 素材约定（文件名、格式、两种问候布局） | 准备放素材时 |
+| [`docs/skin-manager.md`](docs/skin-manager.md) | 前置条件：皮肤管理器的安装、「皮肤管理」里的关键设置、常见问题 | **第一次安装时**；DSH 升级后皮肤变灰时 |
 | `docs/voice-lines.final.json` / `.md` | **台词定稿**（6 档 × 3 条问候 + 3 条提示音），JSON 是权威版 | 改文案、重新生成语音时 |
 | `docs/voice-render-report.md` | Edge-TTS 那版的生成报告（逐条时长与偏差） | 只想快速试听、不装 GPT-SoVITS 时 |
 | `docs/tts-setup.md` | 本机 GPT-SoVITS v2 安装记录（路径、版本、坑、实测） | 重装环境或换机器时 |
