@@ -45,6 +45,7 @@
     "NOTICE"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "node --test test/*.test.js"
   }
 }
