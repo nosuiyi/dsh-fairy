@@ -176,6 +176,22 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 %USERPROFILE%\.dsh\hdd-fairy\assets\
 ```
 
+## 素材与版权
+
+- **本仓库不含任何音视频素材。** 发布件（npm 包 / Release 资产）只有代码、契约、文档与许可；
+  开屏动画、背景图、高光板、问候语音与提示音一律由用户自备，放进上面的目录或用
+  「设置 → HDD Fairy 素材」导入。
+- **示例音频只在作者本机生成，用于演示，不随发布件分发。**
+  `docs/voice-render-report.md`、`docs/voice-lines.*` 记录的是**生成过程与台本文本**，不是音频文件。
+- **自备素材时请确认你有权使用：**
+  - **音色**——用你自己的声音，或用已获授权/已订阅的语音合成服务；**不要**克隆并分发未授权的角色音色
+    （尤其是游戏角色原声）；
+  - **文本**——台词请自己撰写或改写，不要直接搬运作品原文；
+  - **音乐与音效**——使用可商用或已获授权的素材。
+- **本仓库不附带、也不分发 GPT-SoVITS 权重、参考录音或任何训练数据**；需要本地复现请自行准备，
+  并遵守相应项目与数据的许可。
+- **这不是官方作品。** 本项目与任何游戏/公司无隶属关系，请勿据此声称官方授权，也不要用于商业用途。
+
 ## 自检
 
 ```sh
@@ -188,5 +204,6 @@ node packages/dsh-hdd-visual/tools/smoke.mjs
 
 ## 许可
 
-计划按 Apache-2.0 发布；`LICENSE`、`NOTICE`、`TRADEMARKS.md`、`RELEASE-CHECKLIST.md`
-等发布件在 C 步补齐（本仓库当前只含源码与自检）。素材不在本仓库内，其版权归提供者。
+代码 Apache-2.0（见根目录 `LICENSE`；皮肤包另有 `packages/dsh-skin-hdd-fairy/LICENSE` 与 `NOTICE`，
+后者记录徽记几何取自 [Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH) 的署名）。
+本仓库**不含**任何游戏美术、字体或音频素材；素材由用户自备，其权利归提供者。
