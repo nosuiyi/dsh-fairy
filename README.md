@@ -55,13 +55,32 @@
 
 ## 下载与安装
 
+### 方式一：粘贴地址安装（推荐，不用先下载）
+
+在 **插件 → 添加插件** 里粘贴 Release 资源的 **`.tgz` 直链**：
+
+```
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy-0.2.0.tgz
+```
+
+几点说明：
+
+- 必须是**文件直链**（以 `.tgz` 结尾），不是 Release 页面地址；
+- 版本更新后把链接里的 `v0.2.0` 与文件名一起换掉；
+- 插件管理器接受 registry 包名、**tarball URL**、Git 地址与本地路径；tarball 走 pnpm 的远程打包安装，
+  不触发 GitHub 的 `git ls-remote` 预检查（该检查只针对 git 地址）；
+- 仓库必须公开，否则需要额外的 Git 凭据。
+
+### 方式二：下载后从本地安装
+
 | 渠道 | 地址 |
 |---|---|
-| GitHub Releases（推荐） | <https://github.com/nosuiyi/dsh-fairy/releases> — 下载 `dsh-skin-hdd-fairy-<版本>.tgz` |
+| GitHub Releases | <https://github.com/nosuiyi/dsh-fairy/releases> — 下载 `dsh-skin-hdd-fairy-<版本>.tgz` |
 
 ```powershell
 # 先完全退出 DSH 桌面版
 dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
+# 也可以直接在「插件 → 添加插件」里粘贴本机绝对路径
 # 再启动 DSH → 设置 → 皮肤管理 → 切到 HDD Fairy
 ```
 

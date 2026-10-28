@@ -29,16 +29,27 @@ HDD 启动动画、会呼吸并周期性"撕裂"的矢量徽记、按小时问�
 
 ## 安装
 
-从发布件安装（推荐）：
+### 粘贴地址安装（推荐）
+
+在 **插件 → 添加插件** 里粘贴 Release 资源的 `.tgz` 直链：
+
+```
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy-0.2.0.tgz
+```
+
+插件管理器接受 tarball URL（走 pnpm 的远程打包安装），因此不需要先下载到本地；
+升级时把链接里的版本号一并替换。
+
+### 下载后从本地安装
 
 ```powershell
 # 先完全退出 DSH 桌面版
 dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
 ```
 
-发布件在 [GitHub Releases](https://github.com/nosuiyi/dsh-fairy/releases)，国内镜像见仓库根 README。
+发布件在 [GitHub Releases](https://github.com/nosuiyi/dsh-fairy/releases)。
 
-从源码目录安装（开发期）：
+### 从源码目录安装（开发期）
 
 ```powershell
 dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
