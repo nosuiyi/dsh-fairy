@@ -29,7 +29,17 @@ HDD 启动动画、会呼吸并周期性"撕裂"的矢量徽记、按小时问�
 
 ## 安装
 
-### 粘贴地址安装（推荐）
+### 只填包名（最简单，已发布到 npm）
+
+在 **插件 → 添加插件** 里填 `dsh-skin-hdd-fairy`，或：
+
+```powershell
+dsh plugin --profile desktop add dsh-skin-hdd-fairy
+```
+
+包页面：<https://www.npmjs.com/package/dsh-skin-hdd-fairy>
+
+### 粘贴地址安装（不依赖 npm）
 
 在 **插件 → 添加插件** 里粘贴 Release 资源的 `.tgz` 直链：
 

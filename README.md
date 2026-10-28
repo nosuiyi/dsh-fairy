@@ -55,7 +55,24 @@
 
 ## 下载与安装
 
-### 方式一：粘贴地址安装（推荐，不用先下载）
+### 方式一：只填包名（最简单，已发布到 npm）
+
+在 **插件 → 添加插件** 里填：
+
+```
+dsh-skin-hdd-fairy
+```
+
+或命令行：
+
+```powershell
+dsh plugin --profile desktop add dsh-skin-hdd-fairy
+```
+
+管理器会按 registry 上的最新版本安装并按 `saveExact` 锁定版本。
+npm 页面：<https://www.npmjs.com/package/dsh-skin-hdd-fairy>
+
+### 方式二：粘贴地址安装（不依赖 npm）
 
 在 **插件 → 添加插件** 里粘贴 Release 资源的 **`.tgz` 直链**：
 
@@ -71,7 +88,7 @@ https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy
   不触发 GitHub 的 `git ls-remote` 预检查（该检查只针对 git 地址）；
 - 仓库必须公开，否则需要额外的 Git 凭据。
 
-### 方式二：下载后从本地安装
+### 方式三：下载后从本地安装
 
 | 渠道 | 地址 |
 |---|---|
@@ -84,7 +101,7 @@ dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
 # 再启动 DSH → 设置 → 皮肤管理 → 切到 HDD Fairy
 ```
 
-发布件只有代码、契约、文档与许可（10 个文件，约 61 KB），**不含任何音视频素材**：
+发布件只有代码、契约、文档与许可（10 个文件，约 195 KB 解包 / 约 61 KB 压缩），**不含任何音视频素材**：
 素材放进 `%USERPROFILE%\.dsh\hdd-fairy\assets`，或直接在「设置 → HDD Fairy 素材」里导入。
 默认不播开屏、直接进界面；左下角徽记、左上角品牌位与深色配色即装即生效。
 
