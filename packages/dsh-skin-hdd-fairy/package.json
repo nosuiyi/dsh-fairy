@@ -1,6 +1,6 @@
 {
   "name": "dsh-skin-hdd-fairy",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "HDD Fairy: a manager-compatible DSH skin carrying the launch splash, the animated Fairy mark and the turn cues, with the interface palette on top.",
   "main": "lib/index.js",

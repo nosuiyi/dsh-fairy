@@ -8,8 +8,8 @@ Fairy 徽记、按小时问候与回合提示音，外加深海军蓝的界面�
 
 ![HDD Fairy 皮肤：左上角品牌位、左下角常驻徽记、深海军蓝网格底纹](docs/assets/screenshot.png)
 
-*启用皮肤后的新会话页。截图里唯一的形象是 Fairy 徽记：几何取自 Fairy-DSH 并重绘（署名见 `NOTICE`），
-形象源自《绝区零》的 H.D.D.；本项目是非官方粉丝作品，与任何游戏/公司无隶属关系。
+*启用皮肤后的新会话页。徽记就是《绝区零》里的 **Fairy**（H.D.D. 的终端形象），
+本项目按矢量重绘（几何参考与署名见 `NOTICE`）；这是非官方粉丝作品，与任何游戏/公司无隶属关系。
 底纹与光晕由 CSS 渐变生成，界面文字来自 DSH 壳子本身。*
 
 ## 前置条件
@@ -55,10 +55,10 @@ npm 页面：<https://www.npmjs.com/package/dsh-skin-hdd-fairy>
 在 **插件 → 添加插件** 里粘贴 Release 资源的 **`.tgz` 直链**：
 
 ```
-https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy-0.2.0.tgz
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy-0.2.1.tgz
 ```
 
-- 必须是**文件直链**（以 `.tgz` 结尾），不是 Release 页面地址；换版本时把 `v0.2.0` 与文件名一起改掉；
+- 必须是**文件直链**（以 `.tgz` 结尾），不是 Release 页面地址；换版本时把 `v0.2.1` 与文件名一起改掉；
 - 插件管理器接受 registry 包名、**tarball URL**、Git 地址与本地路径；tarball 走 pnpm 的远程打包安装，
   不触发 GitHub 的 `git ls-remote` 预检查（该检查只针对 git 地址）；
 - 仓库必须公开，否则需要额外的 Git 凭据。
@@ -69,7 +69,7 @@ https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy
 
 ```powershell
 # 先完全退出 DSH 桌面版
-dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
+dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.1.tgz
 # 也可以在「插件 → 添加插件」里直接粘贴本机绝对路径
 # 再启动 DSH → 设置 → 皮肤管理 → 切到 HDD Fairy
 ```
@@ -195,8 +195,8 @@ node tools/check-lines.mjs docs/voice-lines.final.json
 - **本仓库不含任何音视频素材。** 发布件（npm 包 / Release 资产）只有代码、契约、文档与许可；
   开屏动画、背景图、高光板、问候语音与提示音一律由用户自备。
   仓库里唯一的图片是 `docs/assets/screenshot.png` —— 本文顶部的效果截图，不随包分发
-  （`files` 白名单里没有 `docs/`）。它展示的 Fairy 徽记，形象来自《绝区零》的 H.D.D.，
-  矢量几何取自 Fairy-DSH 并重绘（署名见 `NOTICE`）；本项目**不主张任何相关 IP 的权利**。
+  （`files` 白名单里没有 `docs/`）。图里的徽记是《绝区零》的 **Fairy**（H.D.D. 的终端形象），
+  本项目按矢量重绘、署名与声明见 `NOTICE`；本项目**不主张任何相关 IP 的权利**。
 - **示例音频只在作者本机生成，用于演示，不随发布件分发。** `docs/voice-lines.*` 与
   `docs/voice-render-report.md` 记录的是台本文本与生成过程，不是音频文件。
 - **自备素材时请确认您有权使用：**

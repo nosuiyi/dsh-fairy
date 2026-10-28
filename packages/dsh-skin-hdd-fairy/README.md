@@ -62,7 +62,7 @@ dsh plugin --profile desktop add dsh-skin-hdd-fairy
 在 **插件 → 添加插件** 里粘贴 Release 资源的 `.tgz` 直链：
 
 ```
-https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy-0.2.0.tgz
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy-0.2.1.tgz
 ```
 
 插件管理器接受 tarball URL（走 pnpm 的远程打包安装），因此不需要先下载到本地；
@@ -72,7 +72,7 @@ https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.0/dsh-skin-hdd-fairy
 
 ```powershell
 # 先完全退出 DSH 桌面版
-dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
+dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.1.tgz
 ```
 
 发布件在 [GitHub Releases](https://github.com/nosuiyi/dsh-fairy/releases)。
@@ -381,6 +381,10 @@ node --check lib/client.js
 
 ## 许可
 
-代码 Apache-2.0（见 `LICENSE`）。徽记的矢量几何取自 [Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH)（Apache-2.0）并重绘，署名与说明见 `NOTICE`；调色板与动效参数同样参考该皮肤。
+代码 Apache-2.0（见 `LICENSE`）。徽记是《绝区零》的 **Fairy**（H.D.D. 的终端形象）的矢量重绘：
+几何参考自 [Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH)（Apache-2.0），署名与声明见 `NOTICE`；
+调色板与动效参数同样参考该皮肤。
 
-**本包不含任何游戏美术或字体的素材文件**（参考中的"印品鸿蒙体"为授权字体，未嵌入）。但请注意：**徽记的形象源自《绝区零》的 H.D.D.**，相关权利归其所有者；本项目是**非官方、非商业**的粉丝作品，与 miHoYo / HoYoverse 无隶属关系，Apache-2.0 的授权只覆盖本项目自己的代码与重绘矢量。
+**本包不含任何游戏美术或字体的素材文件**（参考中的"印品鸿蒙体"为授权字体，未嵌入）。
+徽记的形象与相关权利归其所有者；本项目是**非官方、非商业**的粉丝作品，与 miHoYo / HoYoverse 无隶属关系，
+Apache-2.0 的授权只覆盖本项目自己的代码与重绘矢量。
