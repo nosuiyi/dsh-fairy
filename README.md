@@ -6,10 +6,11 @@
   所以每个人可以用自己的音频与开场画面，仓库里也不含任何游戏素材。
 - **不依赖外部运行时。** 没有 Python、没有 TTS 服务、没有子进程；语音是提前录好/生成好的
   文件，运行时只是读文件并播放。
-- **只占增量槽位。** 用 `shell.overlay` 与 `sidebar.footer.action`（都是 `list` 槽），
-  不去注册 `sidebar.brand.mark` / `.name` / `conversation.hero.brand.mark` 这些 `single` 槽——
-  那些位置在官方构建里已经有主，同优先级再注册会直接抛错。
-- **不改主题令牌。** 开屏自己画自己的表面，`--dsw-*` 令牌仍归 `ui-theme` 所有。
+- **槽位用法。** 主体走 `sidebar.footer.action`（`list` 槽）与 `settings.section`（`list` 槽）；
+  左上角品牌位用 CSS 原位替换（`sidebar.brand.mark` / `.name` 是 `single` 槽且已被壳占用，
+  同优先级注册占不到），新会话页的 `conversation.hero.brand.mark` 是空座，直接注册。
+  所有注册都在 `ctx.effect` 里，停用皮肤即归还。
+- **不改主题令牌。** 自己的表面自己画；`--dsw-*` 令牌仍归 `ui-theme` 所有（仅在启用时把外观偏好设为深色，可逆）。
 
 ## 文档地图
 
@@ -52,7 +53,23 @@
 > 导致四条媒体路由消失（表现为"未检测到素材包"、没有动画与声音）。合并后路由随皮肤走，
 > 不需要任何额外 `insert` 行。
 
-## 安装（开发期）
+## 下载与安装
+
+| 渠道 | 地址 |
+|---|---|
+| GitHub Releases（推荐） | <https://github.com/nosuiyi/dsh-fairy/releases> — 下载 `dsh-skin-hdd-fairy-<版本>.tgz` |
+
+```powershell
+# 先完全退出 DSH 桌面版
+dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.0.tgz
+# 再启动 DSH → 设置 → 皮肤管理 → 切到 HDD Fairy
+```
+
+发布件只有代码、契约、文档与许可（10 个文件，约 61 KB），**不含任何音视频素材**：
+素材放进 `%USERPROFILE%\.dsh\hdd-fairy\assets`，或直接在「设置 → HDD Fairy 素材」里导入。
+默认不播开屏、直接进界面；左下角徽记、左上角品牌位与深色配色即装即生效。
+
+## 从源码安装（开发期）
 
 ```powershell
 # 先完全退出 DSH 桌面版
