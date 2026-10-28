@@ -1,0 +1,6 @@
+# One Client-only row. The Host half is an empty plugin on purpose: every pixel
+# this bundle owns lives in the browser module, and the audio it plays is served
+# by dsh-hdd-voice.
+- insert:
+    - id: hdd-visual
+      name: dsh-hdd-visual

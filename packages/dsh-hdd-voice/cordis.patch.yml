@@ -1,0 +1,11 @@
+# DEPRECATED — 不要启用。
+#
+# The media layer this bundle provided (inventory, asset stream, greeting pick,
+# cue feed) is merged into `dsh-skin-hdd-fairy`, which now answers every route the
+# client calls. Keeping this row would make two bundles claim the same paths.
+#
+# The row is left here only so an old profile that still references it fails
+# visibly instead of silently doing nothing. See DEPRECATED.md.
+- insert:
+    - id: hdd-voice
+      name: dsh-hdd-voice

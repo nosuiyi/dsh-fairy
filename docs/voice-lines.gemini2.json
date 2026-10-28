@@ -1,0 +1,27 @@
+{
+  "greeting": [
+    { "file": "greeting/dawn-1.m4a", "text": "主人，系统在低功耗运转，首席助手随时听候吩咐。", "note": "纯状态陈述，稳健待命开场" },
+    { "file": "greeting/dawn-2.m4a", "text": "主人，全城数据活跃度此刻仅剩百分之十二点四。", "note": "补齐称谓，数据幽默，单一位小数" },
+    { "file": "greeting/dawn-3.m4a", "text": "环境读数偏低，主人，是否需要为您降低屏幕背光？", "note": "请示句式，体贴且克制" },
+    { "file": "greeting/morning-1.m4a", "text": "主人，晨间例行自检完成，各项链路已恢复至峰值。", "note": "补齐称谓，完成时报告" },
+    { "file": "greeting/morning-2.m4a", "text": "主人，我的冷启动耗时比基准线又缩短了零点三秒。", "note": "数字癖自夸" },
+    { "file": "greeting/morning-3.m4a", "text": "提议，主人先查阅重要通讯，再开始今日的交接。", "note": "协议标签提议" },
+    { "file": "greeting/noon-1.m4a", "text": "主人，核心单元温度正常，后台队列保持平稳运转。", "note": "去天气断言" },
+    { "file": "greeting/noon-2.m4a", "text": "主人，助手二号打瞌睡的概率高达百分之九十一点五。", "note": "精简至22字" },
+    { "file": "greeting/noon-3.m4a", "text": "建议，主人稍后统一处理外部积压的非紧急联络。", "note": "去除企业频段词" },
+    { "file": "greeting/afternoon-1.m4a", "text": "主人，后台已调集全部冗余算力，只为承接您的指示。", "note": "新增幽默：数据暴力" },
+    { "file": "greeting/afternoon-2.m4a", "text": "推测，主人此刻的大脑运转效率下滑了百分之十四。", "note": "生理监测调侃" },
+    { "file": "greeting/afternoon-3.m4a", "text": "主人，需要我为您拦截来自外部的非紧急联络吗？", "note": "主动请示" },
+    { "file": "greeting/evening-1.m4a", "text": "主人，晚间系统巡检完毕，所有访问行为已入库。", "note": "精炼完成时报告" },
+    { "file": "greeting/evening-2.m4a", "text": "主人，我为您今晚的答复推演了三点八套合规话术。", "note": "法庭腔与数字怪癖" },
+    { "file": "greeting/evening-3.m4a", "text": "提示，主人无论做出何种决断，在逻辑上均属绝对正确。", "note": "新增幽默：神格谄媚" },
+    { "file": "greeting/night-1.m4a", "text": "主人，夜间安全驻留已就绪，我将维持静默监听。", "note": "夜间收尾" },
+    { "file": "greeting/night-2.m4a", "text": "主人，待机能耗仅占正常水准的百分之五点六。", "note": "数据调侃" },
+    { "file": "greeting/night-3.m4a", "text": "时间进入休整周期，主人是否同意切换至夜间模式？", "note": "请示收令" }
+  ],
+  "cue": [
+    { "file": "cue/thinking.m4a", "text": "推演中。", "note": "计算状态" },
+    { "file": "cue/done.m4a", "text": "处理完毕。", "note": "完成时报告" },
+    { "file": "cue/failed.m4a", "text": "执行受阻，已中止。", "note": "陈述异常中断" }
+  ]
+}

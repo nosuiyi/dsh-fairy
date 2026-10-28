@@ -1,0 +1,8 @@
+# HDD Fairy skin bundle patch.
+#
+# The row id matches `skin.json#wiring.id`, so the skin manager can enable and
+# disable this skin by id from its `dsh-skin managed` section. Never write that
+# section by hand: the manager owns it and rewrites it on every switch.
+- insert:
+    - id: ui-skin-hdd-fairy
+      name: dsh-skin-hdd-fairy

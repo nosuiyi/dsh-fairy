@@ -1,0 +1,2 @@
+2026-10-27T16:05:27.080Z {"event":"start","file":"C:\\Users\\Proud\\.dsh\\profiles\\desktop\\package.json","log":"A:\\user\\Folder\\Study\\job\\dsh-fairy\\hdd-fairy\\docs\\bundles-watch.log","minutes":25,"bundles":["@deepseek-ai/dsh-base","@deepseek-ai/dsh-web-app","dsh-pet","dsh-hdd-voice","dsh-hdd-visual"],"deps":["@smalltailqwq/dsh-client-ui-skin-deep-whale-manager","@smalltailqwq/dsh-client-ui-skin-maid-atelier","@smalltailqwq/dsh-client-ui-skin-orca-link","dsh-pet","dsh-hdd-visual","dsh-hdd-voice"]}
+2026-10-27T16:30:27.226Z {"event":"stop","reason":"deadline"}

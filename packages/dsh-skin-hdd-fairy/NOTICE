@@ -1,0 +1,20 @@
+HDD Fairy (dsh-skin-hdd-fairy)
+Copyright 2026 nosuiyi
+
+This product includes material derived from work developed at:
+
+  Fairy-DSH — https://github.com/Chengzhibense/Fairy-DSH
+  Licensed under the Apache License, Version 2.0.
+
+  The Fairy emblem geometry — the eye-shaped vector used for the launch splash,
+  the sidebar mark and the brand seats — is derived from that project's artwork
+  and was redrawn for this skin. The visual language of the splash timeline
+  (emblem rise, hold, flight to the sidebar) follows the same reference.
+
+No third-party media is distributed with this package:
+
+  Launch clips, backdrop images, highlight plates, greeting clips and cue sounds
+  are supplied by the user at runtime and are never part of this repository or
+  any release artifact. The repository's own policy forbids committing media.
+
+License of this package: Apache License, Version 2.0 — see LICENSE.

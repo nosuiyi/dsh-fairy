@@ -1,0 +1,20 @@
+{
+  "id": "hdd-fairy",
+  "name": "HDD Fairy",
+  "nameEn": "HDD Fairy",
+  "author": "dsh-fairy",
+  "tagline": "HDD 启动动画、会眨眼的 Fairy 徽记与回合提示音",
+  "taglineEn": "An HDD launch animation, a living Fairy mark and turn cues",
+  "description": "把 DSH 包成一台 HDD 启动的机器：开机动画、会呼吸与撕裂的矢量徽记、按小时问候与回合提示音；界面配色在后续版本补齐。",
+  "descriptionEn": "Wraps DSH in an HDD boot: launch animation, a vector mark that breathes and tears, hour-aware greetings and turn cues. The interface palette follows in a later version.",
+  "tags": ["hdd", "boot", "vector", "dark"],
+  "accent": "#3b6ef0",
+  "bodyAttr": "data-dsh-hdd-fairy",
+  "dshCompatibility": "0.2.1rc3",
+  "package": "dsh-skin-hdd-fairy",
+  "wiring": {
+    "id": "ui-skin-hdd-fairy",
+    "bundleWired": false
+  },
+  "order": 9
+}

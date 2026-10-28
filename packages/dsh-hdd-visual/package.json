@@ -1,0 +1,34 @@
+{
+  "name": "dsh-hdd-visual",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "HDD launch splash, sidebar emblem, and cue playback for the DSH desktop shell. Consumes dsh-hdd-voice routes; degrades to a silent splash when they are absent.",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "splash",
+    "skin"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "dsh": ">=0.2.1-rc.3 <0.3.0"
+  },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}

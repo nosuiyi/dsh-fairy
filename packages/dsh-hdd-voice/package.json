@@ -1,0 +1,32 @@
+{
+  "name": "dsh-hdd-voice",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Static, pre-recorded HDD greeting and cue playback for the DSH desktop shell. Ships no audio: assets are user-supplied files under $DSH_HOME/hdd-fairy/assets.",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "cordis.patch.yml"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "audio",
+    "greeting"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "dsh": ">=0.2.1-rc.3 <0.3.0"
+  },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

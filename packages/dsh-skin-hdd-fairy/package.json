@@ -1,0 +1,50 @@
+{
+  "name": "dsh-skin-hdd-fairy",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "HDD Fairy: a manager-compatible DSH skin carrying the launch splash, the animated Fairy mark and the turn cues, with the interface palette on top.",
+  "main": "lib/index.js",
+  "author": "nosuiyi <ProudAlone@outlook.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nosuiyi/dsh-fairy.git"
+  },
+  "homepage": "https://github.com/nosuiyi/dsh-fairy#readme",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./skin.json": "./skin.json",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  },
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "dsh-skin",
+    "hdd",
+    "splash"
+  ],
+  "license": "Apache-2.0",
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/asset-store.js",
+    "cordis.patch.yml",
+    "skin.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

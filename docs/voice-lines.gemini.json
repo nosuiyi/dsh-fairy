@@ -1,0 +1,27 @@
+{
+  "greeting": [
+    { "file": "greeting/dawn-1.m4a", "text": "主人，系统在夜间低功耗运转，首席助手随时听候吩咐。", "note": "纯状态陈述，稳健待命开场" },
+    { "file": "greeting/dawn-2.m4a", "text": "分析显示，此刻全城数据活跃度仅剩百分之十二点四。", "note": "协议标签开场带单一位小数，数据幽默" },
+    { "file": "greeting/dawn-3.m4a", "text": "深夜环境辐射偏低，主人，是否需要为您降低屏幕背光？", "note": "请示句式，体贴且克制" },
+    { "file": "greeting/morning-1.m4a", "text": "晨间例行自检完成，各项链路已恢复至最高响应状态。", "note": "完成时报告，专业稳定" },
+    { "file": "greeting/morning-2.m4a", "text": "主人，我的冷启动耗时比基准线又缩短了零点三秒。", "note": "数字癖自夸，体现AI优越感" },
+    { "file": "greeting/morning-3.m4a", "text": "提议，主人可先查阅安全通讯，再开始今日的各项交接。", "note": "协议标签提议，不越权建议" },
+    { "file": "greeting/noon-1.m4a", "text": "日照峰值已记录，核心模块运作平稳，未发现任何异常。", "note": "恒定状态陈述，中规中矩" },
+    { "file": "greeting/noon-2.m4a", "text": "主人，检测到助手二号在工位打瞌睡的概率高达百分之九十一点五。", "note": "告状腔结合生理概率调侃" },
+    { "file": "greeting/noon-3.m4a", "text": "正午频段信道繁忙，建议主人稍后统一处理外部接入讯号。", "note": "基于客观环境的理性建议" },
+    { "file": "greeting/afternoon-1.m4a", "text": "主人，午后信道监控常态化开启，所有单元均在待命状态。", "note": "平稳的午后状态陈述" },
+    { "file": "greeting/afternoon-2.m4a", "text": "推测，主人此刻的大脑运转效率下滑了百分之十四点二。", "note": "协议标签推测，生理监测调侃" },
+    { "file": "greeting/afternoon-3.m4a", "text": "主人，需要我为您拦截来自外部频道的非紧急通讯吗？", "note": "对外动作前主动请示" },
+    { "file": "greeting/evening-1.m4a", "text": "晚间外部防火墙巡检完毕，所有访问行为已建立日志归档。", "note": "完成时报告，安全感与秩序感" },
+    { "file": "greeting/evening-2.m4a", "text": "主人，我为今晚可能出现的纠纷准备了三点八套合规应答方案。", "note": "法庭腔荒唐准备，数字怪癖" },
+    { "file": "greeting/evening-3.m4a", "text": "提示，晚间外部干扰源增多，执行高密级操作请务必审慎。", "note": "协议标签提示，风险防范建议" },
+    { "file": "greeting/night-1.m4a", "text": "主人，夜间常驻防御阵列已部署完毕，我将维持静默监听。", "note": "沉稳安心的夜间收尾状态" },
+    { "file": "greeting/night-2.m4a", "text": "查询完成，主人的设备待机能耗仅占正常水准的百分之五点六。", "note": "协议标签查询完成，数据调侃" },
+    { "file": "greeting/night-3.m4a", "text": "时间已进入深度休整周期，主人是否同意切换至夜间模式？", "note": "请示收令，尊重主人主导权" }
+  ],
+  "cue": [
+    { "file": "cue/thinking.m4a", "text": "推演中。", "note": "简洁干练，体现计算状态" },
+    { "file": "cue/done.m4a", "text": "处理完毕。", "note": "完成时报告，利落收尾" },
+    { "file": "cue/failed.m4a", "text": "否定，执行受阻。", "note": "低频否定标签，直接明确" }
+  ]
+}

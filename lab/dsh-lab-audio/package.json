@@ -1,0 +1,26 @@
+{
+  "name": "@local/dsh-lab-audio",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway probe: can a bundle stream a static audio file and autoplay it in the DSH desktop shell?",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "assets"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}

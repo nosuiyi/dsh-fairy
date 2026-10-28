@@ -1,0 +1,5 @@
+# Lab probe bundle: one row only. The Host half answers two routes, the Client
+# half runs the autoplay probe and posts its result back for the log.
+- insert:
+    - id: lab-audio
+      name: '@local/dsh-lab-audio'

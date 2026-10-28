@@ -1,0 +1,23 @@
+# 依赖与构建产物
+node_modules/
+.pnpm-store/
+# 打出来的发布件（npm pack 产物），不进版本库；发布走 GitHub Releases / 网盘
+dist/
+*.tgz
+
+# 隔离测试用的 DSH home（照 Fairy-DSH 的做法：测试绝不指向生产目录）
+.dsh-test-home/
+
+# 本地私有资料：原作台词范文、世界观全文、会话日志、密钥，一律不提交
+docs/private/
+*.local.md
+.env
+.env.*
+
+# 一次性排查残留：脚本可留，历史快照与测试音频不提交
+lab/backups/
+lab/**/assets/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db

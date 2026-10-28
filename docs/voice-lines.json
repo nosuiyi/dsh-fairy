@@ -1,0 +1,111 @@
+{
+  "greeting": [
+    {
+      "file": "greeting/dawn-1.m4a",
+      "text": "主人，凌晨三时，系统自检完成。各项指标正常，听候吩咐。",
+      "note": "报告式：报时 + 自检结论 + 待命"
+    },
+    {
+      "file": "greeting/dawn-2.m4a",
+      "text": "检测到主人仍未休息。我保持低功耗待命，随时可用。",
+      "note": "检测式：以「检测到」起头，克制地关心"
+    },
+    {
+      "file": "greeting/dawn-3.m4a",
+      "text": "提示，夜间任务风险上浮。建议主人优先安排休息。",
+      "note": "提示式：给建议但不越权"
+    },
+    {
+      "file": "greeting/morning-1.m4a",
+      "text": "主人，早上好。自检完成，各模块均处于就绪状态。",
+      "note": "最稳的默认开场，纯状态陈述"
+    },
+    {
+      "file": "greeting/morning-2.m4a",
+      "text": "查询完成，我已在待命位置。请主人下达今日指令。",
+      "note": "查询式 + 请示，适合开工"
+    },
+    {
+      "file": "greeting/morning-3.m4a",
+      "text": "主人，我比昨天提前了 0.4 秒完成启动。",
+      "note": "数字癖 + 自夸，短促幽默"
+    },
+    {
+      "file": "greeting/noon-1.m4a",
+      "text": "主人，午间好。系统稳定运行，随时听候指令。",
+      "note": "最稳的默认开场"
+    },
+    {
+      "file": "greeting/noon-2.m4a",
+      "text": "分析显示，此刻是最适合停一停的窗口。主人请稍作休整。",
+      "note": "分析式：以数据给建议，不叠加第二个标签"
+    },
+    {
+      "file": "greeting/noon-3.m4a",
+      "text": "主人，检测到少量待办积压。是否交由我整理？",
+      "note": "请示式，把动作交给主人决定"
+    },
+    {
+      "file": "greeting/afternoon-1.m4a",
+      "text": "主人，下午好。全部模块自检通过，随时可以开始。",
+      "note": "最稳的默认开场"
+    },
+    {
+      "file": "greeting/afternoon-2.m4a",
+      "text": "主人，我已跑完今日第三轮巡查，没有异常。",
+      "note": "数字癖 + 完成时报告"
+    },
+    {
+      "file": "greeting/afternoon-3.m4a",
+      "text": "提示，连续作业会降低效率。建议主人调整节奏。",
+      "note": "提示式，数据化的体贴"
+    },
+    {
+      "file": "greeting/evening-1.m4a",
+      "text": "主人，晚上好。系统已就绪，听候吩咐。",
+      "note": "最稳的默认开场（最短的一条问候）"
+    },
+    {
+      "file": "greeting/evening-2.m4a",
+      "text": "查询完成，主人今日的事项我都记录在案。",
+      "note": "查询式，不含会过期的具体数字"
+    },
+    {
+      "file": "greeting/evening-3.m4a",
+      "text": "主人，夜间数据流量下降，正是我的好时候。",
+      "note": "数字癖式幽默：用流量说荒唐话"
+    },
+    {
+      "file": "greeting/night-1.m4a",
+      "text": "主人，夜里了。系统安静，我在这儿。",
+      "note": "最短的一句，安静的在场感"
+    },
+    {
+      "file": "greeting/night-2.m4a",
+      "text": "检测到时间已晚，主人应当优先处理休息。",
+      "note": "检测式 + 关心，仍只用一个标签"
+    },
+    {
+      "file": "greeting/night-3.m4a",
+      "text": "主人，我会保持在线，直到您不需要为止。",
+      "note": "承诺式收尾，正式而不卖萌"
+    }
+  ],
+  "cue": [
+    {
+      "file": "cue/thinking.m4a",
+      "text": "正在分析。",
+      "note": "回合开始；0.4–1.0 秒，别盖住后续操作"
+    },
+    {
+      "file": "cue/done.m4a",
+      "text": "已完成，主人。",
+      "note": "回合正常结束"
+    },
+    {
+      "file": "cue/failed.m4a",
+      "text": "异常，已中止。",
+      "note": "回合异常结束；可选"
+    }
+  ]
+}
