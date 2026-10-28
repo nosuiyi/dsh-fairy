@@ -3,6 +3,19 @@
 一套由 **DSH Skin Manager**（`@smalltailqwq/dsh-client-ui-skin-deep-whale-manager`）管理的皮肤：
 HDD 启动动画、会呼吸并周期性"撕裂"的矢量徽记、按小时问候与回合提示音，外加深海军蓝的界面配色。
 
+![HDD Fairy 皮肤：左上角品牌位、左下角常驻徽记、深海军蓝网格底纹](https://raw.githubusercontent.com/nosuiyi/dsh-fairy/main/docs/assets/screenshot.png)
+
+*启用皮肤后的新会话页。*（截图走仓库的 `docs/assets/screenshot.png`，不随 npm 包分发。）
+
+## 要求与适用范围
+
+| 项 | 要求 / 实测范围 |
+|---|---|
+| DSH | 桌面版 **0.2.1-rc.3**（本包 `skin.json#dshCompatibility` = `0.2.1rc3`）。版本不匹配时**预期**是皮肤整块不生效而不是报错（未实测，只测过这一版） |
+| 平台 | 实测 **Windows x64**（Electron 44.7 · Chromium 152）；macOS / Linux 未实测，代码里只留了 `open` / `xdg-open` 分支 |
+| 管理器 | Skin Manager 负责发现与互斥切换：启用本皮肤会停用其他皮肤 |
+| 素材 | 不必准备。完全不放素材也能装、能用：默认不播开屏，直接进界面 |
+
 ## 依赖关系：自包含，单包
 
 | 包 | 作用 |
@@ -28,6 +41,11 @@ HDD 启动动画、会呼吸并周期性"撕裂"的矢量徽记、按小时问�
 > （该包后续会改造成**通用语音提示包**，见其 `DEPRECATED.md`）。
 
 ## 安装
+
+**装完都还要多做一步**：DSH → **设置 → 皮肤管理 → 切到「HDD Fairy」**。只装不切换，看到的仍是原界面。
+
+> ⚠️ 动手前先备份 `$DSH_HOME/profiles/<profile>/package.json`：`dsh plugin add/remove` 会重写 profile
+> 里的 `dsh.profile.bundles`，实测还会把**其他第三方 bundle 一起从列表里丢掉**。
 
 ### 只填包名（最简单，已发布到 npm）
 
@@ -78,6 +96,15 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 另外 `dsh-hdd-visual` 与本皮肤**功能重叠**（都提供开屏与侧栏徽记），不要同时启用；
 它的开屏会被本皮肤取代，两个一起开着只会更难排查。
 
+## 卸载与回滚
+
+1. **先切走**：设置 → 皮肤管理 → 切回原皮肤（或「无」）。本包在 `apply(null)` 里归还它创建的一切：
+   样式表、`<body>` 属性、几何变量、定时器、开屏节点，以及它自己设过的那次深色外观偏好；
+2. **再卸包**：`dsh plugin --profile desktop remove dsh-skin-hdd-fairy`——同样会重写
+   `dsh.profile.bundles`，先备份 profile 的 `package.json`（见「安装」开头的警告）；
+3. **素材目录独立存在**：`~/.dsh/hdd-fairy/assets` 不随包删除，留着下次装回来还能用；不想要就自己删；
+4. **只想换回来就不必卸载**：管理器是互斥的，切到别的皮肤就等于停用本皮肤，副作用按上面第 1 条全部释放。
+
 ## 管理器里的设置项
 
 | key | 类型 | 作用 | 生效时机 |
@@ -109,6 +136,9 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 日志里有 `theme-forced` / `theme-restored` 两条记录，可以确认到底有没有发生切换。
 
 ## 素材：发布版不带任何音视频，由用户自己放
+
+> 仓库里另有一份 [`docs/asset-convention.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/asset-convention.md)，
+> 与本节同源；**新增字段或规则以那边为准**，本节只保留 npm 读者需要的最小集。
 
 发布包里**没有**动画、背景图或语音。（启动时会自动建好六个空档位目录——**空目录是正常的**，
 不代表导入失败；判断"有没有素材"请看设置页的条数统计或日志里的 `assets` 事件。）用户把文件丢进 `$DSH_HOME/hdd-fairy/assets`（默认
@@ -265,7 +295,7 @@ status-idle source: api-session  ← 另一条重复翻转被吃掉
 "响了几次、为什么响"可以直接查，不用凭耳朵记。
 
 完整的排查过程与教训见
-[`docs/findings-2026-10-28-cue-signals.md`](../../docs/findings-2026-10-28-cue-signals.md)。
+[`docs/findings-2026-10-28-cue-signals.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/findings-2026-10-28-cue-signals.md)（源码仓库内路径）。
 
 ## 皮肤契约要点（改这个包前先读）
 
@@ -274,6 +304,11 @@ status-idle source: api-session  ← 另一条重复翻转被吃掉
 - `dshCompatibility` 必须匹配 `^\d+\.\d+\.\d+rc\d+$`，本机 DSH 为 `0.2.1-rc.3` → 写 `0.2.1rc3`；
 - bundle 行 id 必须等于 `wiring.id`（`ui-skin-hdd-fairy`）；**不要**手写管理器那个 `dsh-skin managed` 区段，它归管理器所有；
 - 所有样式以 `body[data-dsh-hdd-fairy]` / `html:has(> body[data-dsh-hdd-fairy])` 开头。**绝不要**把属性选择器写成裸的 `[data-…]`——它会连 `<html>` 一起匹配，把整个应用压成窄列（见仓库 `docs/findings-2026-10-28-narrow-window.md`）。
+
+改动开屏或可视层之前，先读根 README 的「五条硬约束」与
+[`docs/findings-2026-10-28-white-splash.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/findings-2026-10-28-white-splash.md)：
+**`<video>` 元素绝不进 DOM**（哪怕 2×2）、**开屏层不做 `opacity` 过渡**、**开屏内部不用 `filter`**。
+这三条都出现在那份排障记录里，违反任何一条都可能回到"整窗白屏、有声音没画面"。
 
 ## 面板纹理：类名是构建哈希，靠"解析"而不是"抄写"
 
@@ -300,6 +335,8 @@ status-idle source: api-session  ← 另一条重复翻转被吃掉
 
 ### DSH 更新后类名又变了怎么办（两条命令）
 
+> `tools/` 只存在于源码仓库，**不在 npm 包里**——从 npm 装的读者需要先 clone 仓库再跑下面两条命令。
+
 ```sh
 # 1. 重新扫出前缀，并把打印出来的 FALLBACK_PREFIXES 覆盖到 lib/client.js
 node tools/scan-skin-classes.mjs
@@ -317,11 +354,13 @@ node --check lib/client.js
 1. **没有美术资源**：参考皮肤的立绘走 `/skin-assets/<id>/<hash>.webp`，本包不打包任何第三方素材；开屏视频/背景图/语音都由用户自备，走本包自己的 `/hdd/asset`（支持 Range）。
 2. ~~面板纹理没有移植~~ —— **已移植**。原版依赖的哈希类名在当前 build 里换了前缀（`Dc7zOa_*` → `an3WzG_*`、`BynINW_*` → `mP3x-q_*`），后缀并没有变。现在改为**运行时解析前缀**，见下节。
 3. **composer 上方的白色小方块不是皮肤元素**：它间歇出现、在 DOM 里完全不存在（`elementFromPoint` 命中透明输入框、区域内没有任何 `svg` 或近白背景节点），连续 4 帧扫描也抓不到稳定实体。最可能是 **Windows 原生 tooltip / 输入法候选框**——由系统绘制，天然是浅色，不受页面样式影响。如果是原生窗口气泡，皮肤这边无需也无法处理。
-4. **侧栏徽记只在展开态出现**：`sidebar.footer.action` 在收起（compact rail）时不渲染。左上角的品牌位（`sidebar.brand.mark` / `sidebar.brand.name`）在**当前 build 里占不到**（壳子占着 single 座），所以用 CSS 原位替换：藏掉壳子的内联 SVG，再画上本皮肤的矢量与文字。守卫条件 `:not(:has([data-hdd-brand-mark]))` 保证——哪天槽位能占了，这两条规则会自动让位，不会重复显示。
+4. **侧栏徽记只在展开态出现（有意为之）**：`sidebar.footer.action` 在收起（compact rail）时不渲染；新会话页的 `conversation.hero.brand.mark` 本身是空座，直接注册即可。左上角的品牌位（`sidebar.brand.mark` / `sidebar.brand.name`）在**当前 build 里占不到**（壳子占着 single 座），所以用 CSS 原位替换：藏掉壳子的内联 SVG，再画上本皮肤的矢量与文字。守卫条件 `:not(:has([data-hdd-brand-mark]))` 保证——哪天槽位能占了，这两条规则会自动让位，不会重复显示。
+   收起态里另外两个单座（`sidebar.brand.mark` 在 rail 里的品牌标、`sidebar.toggle.badge` 通知角标）
+   也已被壳占用——注册只会替换壳自己的内容，所以**不做**。
 
 ## 发布件包含什么
 
-`npm pack` 只打运行时必需的文件（`files` 白名单，实测 **10 个、约 194 KB**，压缩后约 61 KB）：
+`npm pack` 只打运行时必需的文件（`files` 白名单，实测 **10 个、约 200 KB**，压缩后约 60–65 KB）：
 
 | 打包 | 说明 |
 |---|---|
