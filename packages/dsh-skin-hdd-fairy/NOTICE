@@ -1,23 +1,40 @@
 HDD Fairy (dsh-skin-hdd-fairy)
 Copyright 2026 nosuiyi
 
-This product includes material derived from work developed at:
+Provenance of reused visual assets:
 
-  Fairy-DSH — https://github.com/Chengzhibense/Fairy-DSH
-  Licensed under the Apache License, Version 2.0.
+  The emblem vector (FAIRY_EMBLEM in lib/client.js) is taken from the original
+  plugin published by the Bilibili author 天才小宇
+  (https://space.bilibili.com/3494360513514129 ; video BV1n7np6QEPe), which was
+  distributed as the local package @local/dsh-hdd-overlay. It is not a redraw.
+  That plugin's own INSTALL.md states that its interface, code and documentation
+  are the author's original work and are "free to modify for personal use"
+  (可自由修改自用). It does not grant redistribution rights.
 
-  The Fairy emblem geometry — the eye-shaped vector used for the launch splash,
-  the sidebar mark and the brand seats — is derived from that project's artwork
-  and was redrawn for this skin. The visual language of the splash timeline
-  (emblem rise, hold, flight to the sidebar) follows the same reference.
+  Part of the visual stylesheet is taken from the same plugin as well: the grid
+  texture, the vignette, the panel veil, and the --hdd-* custom-property names.
+
+  The Apache-2.0 license of this package covers only the code written for this
+  repository. It does not cover the reused visual assets described above, and it
+  grants no right to redistribute them separately. Redistribution permission for
+  those fragments has not been obtained; it is pending confirmation with the
+  original author.
+
+Design reference:
+
+  The visual language of the splash timeline (emblem rise, hold, flight to the
+  sidebar) follows the same reference. Fairy-DSH
+  (https://github.com/Chengzhibense/Fairy-DSH, Apache-2.0) is credited as an
+  earlier project in that lineage; the exact relationship between that project
+  and the plugin above has not been verified by this repository.
 
 Trademark and character-design notice:
 
   The emblem depicts Fairy, the H.D.D. terminal from *Zenless Zone Zero*
   (绝区零). Rights in that design belong to their respective owners
   (miHoYo / HoYoverse). Nothing in the Apache-2.0 license grants any right to
-  that design, and that license covers only this project's own code and the
-  redrawn vector — not the underlying character, logo or mark.
+  that design, and that license covers only this project's own code — not the
+  reused visual assets, the underlying character, logo or mark.
 
   This project is an unofficial, non-commercial fan work. It is neither
   affiliated with nor endorsed or sponsored by miHoYo / HoYoverse or any game
