@@ -381,4 +381,6 @@ node --check lib/client.js
 
 ## 许可
 
-代码 Apache-2.0（见 `LICENSE`）。徽记的矢量几何取自 [Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH)（Apache-2.0）并重绘，署名与说明见 `NOTICE`；调色板与动效参数同样参考该皮肤。本包不包含任何游戏美术或字体（参考中的"印品鸿蒙体"为授权字体，未嵌入）。
+代码 Apache-2.0（见 `LICENSE`）。徽记的矢量几何取自 [Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH)（Apache-2.0）并重绘，署名与说明见 `NOTICE`；调色板与动效参数同样参考该皮肤。
+
+**本包不含任何游戏美术或字体的素材文件**（参考中的"印品鸿蒙体"为授权字体，未嵌入）。但请注意：**徽记的形象源自《绝区零》的 H.D.D.**，相关权利归其所有者；本项目是**非官方、非商业**的粉丝作品，与 miHoYo / HoYoverse 无隶属关系，Apache-2.0 的授权只覆盖本项目自己的代码与重绘矢量。
