@@ -1199,9 +1199,6 @@ window.__ModuleLoader__.load({
     /** How long 已完成 / 出错了 stays before it becomes 空闲中. */
     const WORKER_IDLE_MS = 8000
 
-    /** A cue older than this is not worth resuming after a reload. */
-    const WORKER_RESUME_MS = 5 * 60 * 1000
-
     const worker = { state: 'ready', listeners: new Set() }
 
     function setWorkerState(next) {
@@ -1233,6 +1230,28 @@ window.__ModuleLoader__.load({
         workerIdleTimer = undefined
         setWorkerState('idle')
       }, WORKER_IDLE_MS)
+    }
+
+    /**
+     * Align the label with the Host's authoritative `running` flag.
+     *
+     * Cue events are best-effort — a reload, a hidden tab, a dropped response or a Host
+     * restart that loses its run state can swallow one — and a missed `done` used to
+     * leave 思考中 on screen forever. `running` cannot be missed that way, so every poll
+     * compares the two and corrects a label that still claims a finished run is going.
+     * Cues keep deciding *done vs failed*; this only rescues a lost ending.
+     */
+    function reconcileStatus(body) {
+      if (body === null || body === undefined) return
+      const running = typeof body.running === 'number' ? body.running : null
+      if (running === null) return
+      if (running > 0) {
+        if (worker.state !== 'thinking') noteCueStatus('thinking')
+        return
+      }
+      if (worker.state !== 'thinking') return
+      const lastKind = body.last !== null && body.last !== undefined ? String(body.last.kind ?? '') : ''
+      noteCueStatus(lastKind === 'failed' ? 'failed' : 'done')
     }
 
     /** Subscribe the mark to the store; `useState` keeps the re-render local. */
@@ -2213,21 +2232,21 @@ window.__ModuleLoader__.load({
             if (body.seq < seq) played.clear()
             seq = body.seq
           }
+          /* Reconcile the label against the Host's own view on *every* poll, including
+             the first one.
+           *
+           * Cue events alone are not enough: a cue can be missed (page reload, hidden
+           * tab, a Host restart that drops its run state, a dropped response) and then
+           * the label would sit on 思考中 forever — which is exactly what happened after
+           * a completed run. `running` is authoritative, so a label that still says
+           * 思考中 while the Host says "nothing running" is corrected here, within one
+           * poll interval. Cues keep deciding *done vs failed*. */
+          reconcileStatus(body)
           /* The server keeps the last handful of cues for a client that polls late.
              On a fresh page that would replay them all as a burst of stale sound, so
-             the first poll only aligns the cursor and stays silent — but it does seed
-             the *label* from the Host's current run, or a reload mid-run would sit on
-             已就位 while the agent is still working. */
+             the first poll only aligns the cursor and stays silent. */
           if (!primed) {
             primed = true
-            const running = typeof body.running === 'number' ? body.running : 0
-            if (running > 0) {
-              noteCueStatus('thinking')
-            } else if (body.last !== null && body.last !== undefined && typeof body.last.at === 'number'
-              && Date.now() - body.last.at < WORKER_RESUME_MS) {
-              const kind = String(body.last.kind ?? '')
-              if (kind === 'thinking' || kind === 'done' || kind === 'failed') noteCueStatus(kind)
-            }
             return
           }
           for (const cue of body.cues || []) {
