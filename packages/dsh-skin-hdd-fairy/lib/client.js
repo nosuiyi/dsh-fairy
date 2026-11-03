@@ -570,11 +570,12 @@ window.__ModuleLoader__.load({
       '  transition: color 200ms ease-out;',
       /* Fades in once, when the label first appears; the element is not re-keyed on a
          state change, so 轮到 思考中 / 已完成 only recolours — no blink. `both` keeps
-         the pre-delay frame invisible instead of flashing the text for one paint. */
-      '  animation: hdd-status-in 420ms ease-out both;',
+         the pre-delay frame invisible instead of flashing the text for one paint.
+         Durations live in one place: this is the knob to slow the entrance down. */
+      '  animation: hdd-status-in var(--hdd-status-in-ms, 1200ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;',
       '}',
       '@keyframes hdd-status-in {',
-      '  from { opacity: 0; transform: translateY(2px); }',
+      '  from { opacity: 0; transform: translateY(3px); }',
       '  to { opacity: 1; transform: none; }',
       '}',
       '[data-hdd-mark-status]::before {',
