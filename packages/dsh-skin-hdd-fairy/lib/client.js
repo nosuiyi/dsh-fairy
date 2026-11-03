@@ -568,6 +568,14 @@ window.__ModuleLoader__.load({
       '  color: var(--dsw-alias-label-secondary);',
       '  pointer-events: none;',
       '  transition: color 200ms ease-out;',
+      /* Fades in once, when the label first appears; the element is not re-keyed on a
+         state change, so 轮到 思考中 / 已完成 only recolours — no blink. `both` keeps
+         the pre-delay frame invisible instead of flashing the text for one paint. */
+      '  animation: hdd-status-in 420ms ease-out both;',
+      '}',
+      '@keyframes hdd-status-in {',
+      '  from { opacity: 0; transform: translateY(2px); }',
+      '  to { opacity: 1; transform: none; }',
       '}',
       '[data-hdd-mark-status]::before {',
       '  content: "";',
@@ -722,7 +730,7 @@ window.__ModuleLoader__.load({
       '  [data-hdd-mark-full] [data-hdd-mark-whole],',
       '  [data-hdd-mark-band] { animation: none !important; }',
       '  [data-hdd-mark] { transition: none !important; }',
-      '  [data-hdd-mark-status]::before { animation: none !important; }',
+      '  [data-hdd-mark-status], [data-hdd-mark-status]::before { animation: none !important; }',
       '}',
       '@media (prefers-reduced-motion: reduce) {',
       /* Every transition the skin owns, not just the ones on the splash layer: the
