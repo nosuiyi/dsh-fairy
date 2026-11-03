@@ -324,10 +324,17 @@ async function streamFile(res, file, rangeHeader) {
 function installCueFeed(ctx, root) {
   let cueSeq = 0
   const cues = []
+  /**
+   * The newest cue, so a client that (re)loads mid-run can recover the label instead
+   * of waiting for the next transition. A page reload restarts the poller's cursor at
+   * zero, and without this the status showed 已就位 while the agent was still working.
+   */
+  let lastCue = null
 
   const pushCue = (kind, sessionId, detail) => {
     cueSeq += 1
-    cues.push({ seq: cueSeq, kind, sessionId, at: Date.now() })
+    lastCue = { seq: cueSeq, kind, at: Date.now() }
+    cues.push({ seq: cueSeq, kind, sessionId, at: lastCue.at })
     if (cues.length > CUE_HISTORY) cues.splice(0, cues.length - CUE_HISTORY)
     note(`{"event":"cue","detail":${JSON.stringify({ kind, sessionId, ...detail })}}`)
   }
@@ -471,7 +478,13 @@ function installCueFeed(ctx, root) {
         seq: pending.map((cue) => cue.seq),
       })}}`)
     }
-    json(res, 200, { seq: cueSeq, cues: pending })
+    /* `running` and `last` let a client that just (re)loaded recover the label without
+       waiting for the next transition; both describe foreground work only. */
+    let running = 0
+    for (const [id, state] of runs) {
+      if (state.running === true && background.get(id) !== true) running += 1
+    }
+    json(res, 200, { seq: cueSeq, cues: pending, running, last: lastCue })
   })
 }
 

@@ -120,8 +120,9 @@ window.__ModuleLoader__.load({
         : 0
       applyMarkStyle()
       if (cues !== null) {
-        if (settings.cues) cues.start()
-        else cues.stop()
+        /* The poller feeds the status label as well as the sounds, so it runs either
+           way; `playCue` is what the cues switch gates. */
+        cues.start()
       }
     }
 
@@ -543,7 +544,51 @@ window.__ModuleLoader__.load({
       '[data-hdd-mark][data-rail="true"] { --hdd-mark-size: 30px; --hdd-mark-ring: 2px; }',
       '[data-hdd-mark] svg { display: block; }',
       '[data-hdd-mark] circle { corner-shape: round; }',
-      `html[${SPLASH_ATTR}="true"] [data-hdd-mark] { opacity: 0; transition: opacity 200ms linear; }`,
+      `html[${SPLASH_ATTR}="true"] [data-hdd-mark-seat] { opacity: 0; transition: opacity 200ms linear; }`,
+
+      /* ---- the status label beside the mark ----
+         The seat is one inline flex row: the 60px vector, then one short word. The
+         word is the same state the cue feed drives (see `noteCueStatus`), so the eye
+         and the ear never disagree. The 56px rail has no room for text, and the label
+         exists only in the wide seat. */
+      '[data-hdd-mark-seat] {',
+      '  display: inline-flex;',
+      '  align-items: center;',
+      '  gap: 10px;',
+      '  max-width: 100%;',
+      '}',
+      '[data-hdd-mark-status] {',
+      '  display: inline-flex;',
+      '  align-items: center;',
+      '  gap: 6px;',
+      '  font-size: 11px;',
+      '  line-height: 1;',
+      '  letter-spacing: 0.06em;',
+      '  white-space: nowrap;',
+      '  color: var(--dsw-alias-label-secondary);',
+      '  pointer-events: none;',
+      '  transition: color 200ms ease-out;',
+      '}',
+      '[data-hdd-mark-status]::before {',
+      '  content: "";',
+      '  width: 6px;',
+      '  height: 6px;',
+      '  border-radius: 50%;',
+      '  background: currentColor;',
+      '  opacity: 0.8;',
+      '}',
+      '[data-hdd-mark-seat][data-state="thinking"] [data-hdd-mark-status] { color: var(--dsw-alias-brand-primary); }',
+      '[data-hdd-mark-seat][data-state="thinking"] [data-hdd-mark-status]::before {',
+      '  animation: hdd-mark-status-pulse 1.2s ease-in-out infinite;',
+      '}',
+      '[data-hdd-mark-seat][data-state="done"] [data-hdd-mark-status] { color: var(--dsw-alias-state-success-primary); }',
+      '[data-hdd-mark-seat][data-state="failed"] [data-hdd-mark-status] { color: var(--dsw-alias-state-error-primary); }',
+      '[data-hdd-mark-seat][data-state="idle"] [data-hdd-mark-status] { color: var(--dsw-alias-state-idle-primary); }',
+      '[data-hdd-mark-seat][data-rail="true"] [data-hdd-mark-status] { display: none; }',
+      '@keyframes hdd-mark-status-pulse {',
+      '  0%, 100% { opacity: 0.3; transform: scale(0.85); }',
+      '  50% { opacity: 1; transform: scale(1); }',
+      '}',
 
       /* ---- the vector's own motion (ported from the reference skin) ----
          Everything is scoped to `[data-hdd-mark-scope]`, which the markup puts on
@@ -677,6 +722,7 @@ window.__ModuleLoader__.load({
       '  [data-hdd-mark-full] [data-hdd-mark-whole],',
       '  [data-hdd-mark-band] { animation: none !important; }',
       '  [data-hdd-mark] { transition: none !important; }',
+      '  [data-hdd-mark-status]::before { animation: none !important; }',
       '}',
       '@media (prefers-reduced-motion: reduce) {',
       /* Every transition the skin owns, not just the ones on the splash layer: the
@@ -1114,6 +1160,79 @@ window.__ModuleLoader__.load({
         + '</div>'
     }
 
+    /* ------------------------------------------------------------ worker status
+     *
+     * One short label beside the mark, driven by the *same* cue feed the sounds use.
+     * The poller is a plain function and the mark is a React component, so the two meet
+     * on a tiny store rather than a second data source: one run, one state, one truth.
+     *
+     *   ready    已就位  — 每次打开软件
+     *   thinking 思考中  — 运行开始
+     *   done     已完成  — 运行正常结束
+     *   failed   出错了  — 运行异常结束
+     *   idle     空闲中  — 结束之后静置片刻
+     */
+    const WORKER_TEXT = Object.freeze({
+      ready: '已就位',
+      thinking: '思考中',
+      done: '已完成',
+      failed: '出错了',
+      idle: '空闲中',
+    })
+
+    /** How long 已完成 / 出错了 stays before it becomes 空闲中. */
+    const WORKER_IDLE_MS = 8000
+
+    /** A cue older than this is not worth resuming after a reload. */
+    const WORKER_RESUME_MS = 5 * 60 * 1000
+
+    const worker = { state: 'ready', listeners: new Set() }
+
+    function setWorkerState(next) {
+      if (worker.state === next) return
+      worker.state = next
+      for (const listener of Array.from(worker.listeners)) {
+        try {
+          listener()
+        } catch {
+          /* a broken subscriber must not take the others down */
+        }
+      }
+    }
+
+    let workerIdleTimer
+
+    /** Map one cue onto the label; the idle countdown starts only when a run ends. */
+    function noteCueStatus(kind) {
+      if (workerIdleTimer !== undefined) {
+        window.clearTimeout(workerIdleTimer)
+        workerIdleTimer = undefined
+      }
+      if (kind === 'thinking') {
+        setWorkerState('thinking')
+        return
+      }
+      setWorkerState(kind === 'done' ? 'done' : 'failed')
+      workerIdleTimer = window.setTimeout(() => {
+        workerIdleTimer = undefined
+        setWorkerState('idle')
+      }, WORKER_IDLE_MS)
+    }
+
+    /** Subscribe the mark to the store; `useState` keeps the re-render local. */
+    function useWorkerStatus() {
+      const [state, setState] = React.useState(worker.state)
+      React.useEffect(() => {
+        const listener = () => setState(worker.state)
+        worker.listeners.add(listener)
+        listener()
+        return () => {
+          worker.listeners.delete(listener)
+        }
+      }, [])
+      return state
+    }
+
     /**
      * The seat in the sidebar foot.
      *
@@ -1124,15 +1243,32 @@ window.__ModuleLoader__.load({
      */
     function Mark(props) {
       const wide = !(props !== null && props !== undefined && props.wide === false)
+      const status = useWorkerStatus()
       return h('div', {
-        'data-hdd-mark': 'true',
+        'data-hdd-mark-seat': 'true',
         'data-rail': wide ? 'false' : 'true',
-        'aria-hidden': 'true',
-        /* The wide seat gets the full treatment — that is where the reference skin's
-           presence comes from. The 30px rail copy keeps only the vector's own
-           motion. */
-        dangerouslySetInnerHTML: { __html: fairyMarkup({ size: '100%', full: wide }) },
-      })
+        'data-state': status,
+      }, [
+        h('div', {
+          key: 'mark',
+          'data-hdd-mark': 'true',
+          'data-rail': wide ? 'false' : 'true',
+          'aria-hidden': 'true',
+          /* The wide seat gets the full treatment — that is where the reference skin's
+             presence comes from. The 30px rail copy keeps only the vector's own
+             motion. */
+          dangerouslySetInnerHTML: { __html: fairyMarkup({ size: '100%', full: wide }) },
+        }),
+        /* The rail (56px) has no room for text, so the label exists only when wide. */
+        wide
+          ? h('span', {
+            key: 'status',
+            'data-hdd-mark-status': 'true',
+            role: 'status',
+            'aria-live': 'polite',
+          }, WORKER_TEXT[status] ?? '')
+          : null,
+      ])
     }
 
     /* ------------------------------------------------------------ brand seats
@@ -1980,6 +2116,9 @@ window.__ModuleLoader__.load({
       }
 
       const playCue = (kind) => {
+        /* The poller also feeds the status label, so it stays up even when the sounds
+           are switched off — the *sound* is what this line gates. */
+        if (settings.cues === false) return
         const inventory = info.value
         if (inventory === null || inventory.cues === undefined) return
         const file = inventory.cues[kind]
@@ -2017,9 +2156,19 @@ window.__ModuleLoader__.load({
           }
           /* The server keeps the last handful of cues for a client that polls late.
              On a fresh page that would replay them all as a burst of stale sound, so
-             the first poll only aligns the cursor and stays silent. */
+             the first poll only aligns the cursor and stays silent — but it does seed
+             the *label* from the Host's current run, or a reload mid-run would sit on
+             已就位 while the agent is still working. */
           if (!primed) {
             primed = true
+            const running = typeof body.running === 'number' ? body.running : 0
+            if (running > 0) {
+              noteCueStatus('thinking')
+            } else if (body.last !== null && body.last !== undefined && typeof body.last.at === 'number'
+              && Date.now() - body.last.at < WORKER_RESUME_MS) {
+              const kind = String(body.last.kind ?? '')
+              if (kind === 'thinking' || kind === 'done' || kind === 'failed') noteCueStatus(kind)
+            }
             return
           }
           for (const cue of body.cues || []) {
@@ -2033,6 +2182,8 @@ window.__ModuleLoader__.load({
                 if (oldest.done !== true) played.delete(oldest.value)
               }
             }
+            /* The label follows the run even when the sound is switched off. */
+            noteCueStatus(cue.kind)
             playCue(cue.kind)
           }
         } catch {
@@ -2279,8 +2430,11 @@ window.__ModuleLoader__.load({
         ctx.effect(() => () => window.clearInterval(refreshTimer), 'hdd-skin class refresh')
 
         void loadInfo()
+        /* Kept running whatever the cues switch says: the same feed drives the status
+           label, and `playCue` decides whether a cue is also heard. */
         cues = installCues(ctx)
-        if (settings.cues === false) cues.stop()
+        /* Fresh page = "已就位"; the feed moves it on from there. */
+        setWorkerState('ready')
 
         /* The manager can turn the whole timeline off; the mark and the cues are
            independent of it, so the skin still identity-marks the sidebar.

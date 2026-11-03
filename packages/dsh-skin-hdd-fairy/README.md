@@ -318,6 +318,25 @@ status-idle source: api-session  ← 另一条重复翻转被吃掉
 完整的排查过程与教训见
 [`docs/findings-2026-10-28-cue-signals.md`](https://github.com/nosuiyi/dsh-fairy/blob/main/docs/findings-2026-10-28-cue-signals.md)（源码仓库内路径）。
 
+## 左下角的状态文字
+
+徽记右边跟着一个短词，和提示音**共用同一条运行状态流**（不是第二套数据源）：
+
+| 状态 | 文字 | 何时 |
+|---|---|---|
+| `ready` | 已就位 | 每次打开软件 |
+| `thinking` | 思考中 | 一次运行开始（小圆点呼吸） |
+| `done` | 已完成 | 运行正常结束 |
+| `failed` | 出错了 | 运行异常结束 |
+| `idle` | 空闲中 | `已完成` / `出错了` 之后 **8 秒**（`WORKER_IDLE_MS`） |
+
+细节：
+
+- **关掉「回合提示音」也照样显示**：轮询器只为文字保留，`playCue` 才是被开关管住的那一步；
+- **刷新页面不会丢状态**：`/hdd/cue` 会一并返回 `running`（前台是否有运行中的会话）与 `last`（最后一条 cue），
+  客户端首轮就用它补齐——否则重载后明明在跑却显示"已就位"（`WORKER_RESUME_MS` = 5 分钟内的 cue 才采纳）；
+- 收起成 56px rail 时文字隐藏，只留徽记；`prefers-reduced-motion` 下圆点不呼吸、颜色也不渐变。
+
 ## 皮肤契约要点（改这个包前先读）
 
 - `skin.json` 必须能被 `require.resolve('<包名>/skin.json')` 找到 → `package.json#exports` 里要有 `./skin.json`；
