@@ -1269,17 +1269,37 @@ window.__ModuleLoader__.load({
        * the stylesheet's transition does the rest. */
       const [revealed, setRevealed] = React.useState(false)
       React.useEffect(() => {
+        let cancelled = false
         let second = 0
-        const first = window.requestAnimationFrame(() => {
+        let timer = 0
+        const start = () => {
+          if (cancelled) return
           second = window.requestAnimationFrame(() => setRevealed(true))
-        })
-        /* rAF is parked while the window is hidden; this keeps the label from staying
-           invisible forever if the page was loaded in the background. */
-        const fallback = window.setTimeout(() => setRevealed(true), 400)
+        }
+        /* Start the fade only once the interface is actually on screen.
+         *
+         * The seat mounts while the shell is still booting (and, with a splash, behind
+         * it), so a fade started at mount is already over by the time anything is
+         * visible — the label then reads as "it just appeared". Wait for the shell
+         * overlay, for the splash marker to be gone, and then one short beat. */
+        const ready = () => document.querySelector('[data-shell-overlay]') !== null
+          && !document.documentElement.hasAttribute(SPLASH_ATTR)
+        const waitForShell = () => {
+          if (cancelled) return
+          if (ready()) {
+            timer = window.setTimeout(start, 260)
+            return
+          }
+          timer = window.setTimeout(waitForShell, 120)
+        }
+        waitForShell()
+        /* Never keep the label hidden because a signal never showed up. */
+        const cap = window.setTimeout(start, 8000)
         return () => {
-          window.cancelAnimationFrame(first)
-          if (second !== 0) window.cancelAnimationFrame(second)
-          window.clearTimeout(fallback)
+          cancelled = true
+          window.cancelAnimationFrame(second)
+          window.clearTimeout(timer)
+          window.clearTimeout(cap)
         }
       }, [])
       return h('div', {
