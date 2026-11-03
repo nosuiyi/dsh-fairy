@@ -567,17 +567,22 @@ window.__ModuleLoader__.load({
       '  white-space: nowrap;',
       '  color: var(--dsw-alias-label-secondary);',
       '  pointer-events: none;',
-      '  transition: color 200ms ease-out;',
-      /* Fades in once, when the label first appears; the element is not re-keyed on a
-         state change, so 轮到 思考中 / 已完成 only recolours — no blink. `both` keeps
-         the pre-delay frame invisible instead of flashing the text for one paint.
-         Durations live in one place: this is the knob to slow the entrance down. */
-      '  animation: hdd-status-in var(--hdd-status-in-ms, 1200ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;',
+      /* The entrance is a *transition*, not a keyframe animation.
+       *
+       * A keyframe with `fill-mode: both` still gets one paint at the element's natural
+       * opacity before its first frame lands — the text pops in, then fades, which is
+       * exactly what the eye notices. Here the element is born transparent (`opacity:
+       * 0` below) and React flips `data-shown` two frames later, so the first paint is
+       * already the invisible state and only the transition moves it. */
+      '  opacity: 0;',
+      '  transform: translateY(3px);',
+      '  transition:',
+      '    opacity var(--hdd-status-in-ms, 1200ms) cubic-bezier(0.22, 0.61, 0.36, 1),',
+      '    transform var(--hdd-status-in-ms, 1200ms) cubic-bezier(0.22, 0.61, 0.36, 1),',
+      '    color 200ms ease-out;',
       '}',
-      '@keyframes hdd-status-in {',
-      '  from { opacity: 0; transform: translateY(3px); }',
-      '  to { opacity: 1; transform: none; }',
-      '}',
+      '[data-hdd-mark-status][data-shown="true"] { opacity: 1; transform: none; }',
+      '[data-hdd-mark-status][data-shown="false"] { opacity: 0; transform: translateY(3px); }',
       '[data-hdd-mark-status]::before {',
       '  content: "";',
       '  width: 6px;',
@@ -731,7 +736,9 @@ window.__ModuleLoader__.load({
       '  [data-hdd-mark-full] [data-hdd-mark-whole],',
       '  [data-hdd-mark-band] { animation: none !important; }',
       '  [data-hdd-mark] { transition: none !important; }',
-      '  [data-hdd-mark-status], [data-hdd-mark-status]::before { animation: none !important; }',
+      '  [data-hdd-mark-status]::before { animation: none !important; }',
+      /* No slow fade either: the label is simply there. */
+      '  [data-hdd-mark-status] { transition-duration: 1ms !important; }',
       '}',
       '@media (prefers-reduced-motion: reduce) {',
       /* Every transition the skin owns, not just the ones on the splash layer: the
@@ -1253,6 +1260,28 @@ window.__ModuleLoader__.load({
     function Mark(props) {
       const wide = !(props !== null && props !== undefined && props.wide === false)
       const status = useWorkerStatus()
+      /* Reveal on the second animation frame, not on the first paint.
+       *
+       * A keyframe animation with `fill-mode: both` still paints the element once at
+       * its natural opacity before the animation's first frame lands, which reads as
+       * "pops in, then fades". Rendering at `opacity: 0` and flipping a flag after two
+       * frames guarantees the transparent state is what the browser paints first, and
+       * the stylesheet's transition does the rest. */
+      const [revealed, setRevealed] = React.useState(false)
+      React.useEffect(() => {
+        let second = 0
+        const first = window.requestAnimationFrame(() => {
+          second = window.requestAnimationFrame(() => setRevealed(true))
+        })
+        /* rAF is parked while the window is hidden; this keeps the label from staying
+           invisible forever if the page was loaded in the background. */
+        const fallback = window.setTimeout(() => setRevealed(true), 400)
+        return () => {
+          window.cancelAnimationFrame(first)
+          if (second !== 0) window.cancelAnimationFrame(second)
+          window.clearTimeout(fallback)
+        }
+      }, [])
       return h('div', {
         'data-hdd-mark-seat': 'true',
         'data-rail': wide ? 'false' : 'true',
@@ -1273,6 +1302,7 @@ window.__ModuleLoader__.load({
           ? h('span', {
             key: 'status',
             'data-hdd-mark-status': 'true',
+            'data-shown': revealed ? 'true' : 'false',
             role: 'status',
             'aria-live': 'polite',
           }, WORKER_TEXT[status] ?? '')
