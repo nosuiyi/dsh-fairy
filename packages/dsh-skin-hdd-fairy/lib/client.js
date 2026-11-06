@@ -163,6 +163,15 @@ window.__ModuleLoader__.load({
     const CUE_VOLUME = 0.45
 
     /**
+     * How far ahead every clip is scheduled on the audio clock.
+     *
+     * Not a latency knob to shave: an endpoint that was idle still has to wake, and a
+     * source that starts 30ms out loses its opening syllable while the device comes up.
+     * 120ms is short enough to feel immediate and long enough to cover the wake.
+     */
+    const PLAY_LEAD_S = 0.12
+
+    /**
      * Fire-and-forget diagnostics.
      *
      * The splash is the one feature whose failure mode is "nothing happens", so it
@@ -1011,13 +1020,23 @@ window.__ModuleLoader__.load({
       return info.promise
     }
 
-    const greeting = { context: null, buffer: null, blobUrl: null, requested: false }
+    const greeting = { context: null, buffer: null, blobUrl: null, requested: false, keepAlive: null }
 
     /** Shared AudioContext; a refused one is simply "no decoded playback". */
     function audioContext() {
       if (greeting.context !== null) return greeting.context
+      /* Reuse the one this document already made. A hot-reloaded module starts with a
+         fresh closure, and Chrome limits how many live AudioContexts a page may have —
+         the orphaned ones from earlier reloads made new contexts behave badly (they
+         stayed suspended, so cues fell back to the media element). */
+      const shared = window.__hddAudioContext
+      if (shared instanceof AudioContext) {
+        greeting.context = shared
+        return shared
+      }
       try {
         greeting.context = new AudioContext()
+        window.__hddAudioContext = greeting.context
       } catch {
         greeting.context = null
       }
@@ -1035,9 +1054,41 @@ window.__ModuleLoader__.load({
      */
     function ensureRunning(context) {
       if (context === null || context === undefined) return Promise.resolve(null)
-      if (context.state === 'running') return Promise.resolve(context)
+      if (context.state === 'running') {
+        startKeepAlive(context)
+        return Promise.resolve(context)
+      }
       const resumed = typeof context.resume === 'function' ? context.resume() : null
-      return Promise.resolve(resumed).then(() => context, () => context)
+      return Promise.resolve(resumed).then(() => {
+        startKeepAlive(context)
+        return context
+      }, () => context)
+    }
+
+    /**
+     * Hold one muted oscillator open on the context.
+     *
+     * An audio endpoint that has been idle — Windows power management, a Bluetooth
+     * headset — needs a moment to come back, and a buffer scheduled 30ms out is already
+     * playing while the device is still waking: the opening syllable goes missing, and
+     * only on the *first* sound after silence, which is exactly the intermittency. A
+     * muted source keeps the stream (and therefore the endpoint) awake; `PLAY_LEAD_S`
+     * covers whatever is left.
+     */
+    function startKeepAlive(context) {
+      if (greeting.keepAlive !== null || context === null) return
+      try {
+        const gain = context.createGain()
+        gain.gain.value = 0
+        const oscillator = context.createOscillator()
+        oscillator.frequency.value = 220
+        oscillator.connect(gain)
+        gain.connect(context.destination)
+        oscillator.start()
+        greeting.keepAlive = { oscillator, gain }
+      } catch {
+        greeting.keepAlive = null
+      }
     }
 
     /** Fetch and decode one clip ahead of the moment it is needed. */
@@ -1085,7 +1136,7 @@ window.__ModuleLoader__.load({
           node.buffer = greeting.buffer
           node.connect(running.destination)
           /* A small beat after the resume, measured on the live clock. */
-          node.start(running.currentTime + 0.05)
+          node.start(running.currentTime + PLAY_LEAD_S)
           const seconds = greeting.buffer.duration
           return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, seconds) * 1000))
         })
@@ -2231,16 +2282,26 @@ window.__ModuleLoader__.load({
        */
       const playCueAudio = async (file) => {
         const context = audioContext()
-        if (context === null) return false
+        if (context === null) {
+          return false
+        }
         const running = await ensureRunning(context)
-        if (running === null) return false
+        if (running === null) {
+          return false
+        }
         if (cueSource !== null) return true
         let buffer = cueBuffers.get(file)
         if (buffer === undefined) {
           const response = await fetch(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
-          if (!response.ok) return false
+          if (!response.ok) {
+            return false
+          }
           const bytes = await response.arrayBuffer()
-          buffer = await running.decodeAudioData(bytes.slice(0))
+          try {
+            buffer = await running.decodeAudioData(bytes.slice(0))
+          } catch {
+            return false
+          }
           cueBuffers.set(file, buffer)
         }
         if (cueSource !== null) return true
@@ -2259,18 +2320,24 @@ window.__ModuleLoader__.load({
           }
         }
         cueSource = node
-        node.start(running.currentTime + 0.03)
+        node.start(running.currentTime + PLAY_LEAD_S)
         return true
       }
 
       const playCue = (kind) => {
         /* The poller also feeds the status label, so it stays up even when the sounds
            are switched off — the *sound* is what this line gates. */
-        if (settings.cues === false) return
+        if (settings.cues === false) {
+          return
+        }
         const inventory = info.value
-        if (inventory === null || inventory.cues === undefined) return
+        if (inventory === null || inventory.cues === undefined) {
+          return
+        }
         const file = inventory.cues[kind]
-        if (file === undefined || file === null) return
+        if (file === undefined || file === null) {
+          return
+        }
         if (cueSource !== null) return
         if (playing !== null && playing.paused === false) return
         const now = Date.now()
