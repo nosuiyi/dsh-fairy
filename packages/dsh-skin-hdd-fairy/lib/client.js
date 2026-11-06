@@ -513,6 +513,32 @@ window.__ModuleLoader__.load({
       '}',
       '[data-hdd-field][data-on="true"] { opacity: 1; }',
       '[data-hdd-field][data-on="false"] { opacity: 0; transition: opacity 1150ms ease-in; }',
+      /* ---- radial mask reveal (no-clip route only) ----
+         The emblem pops out of the centre; the plate should come from the same place and
+         the cover backdrop should be eaten away from it, so the whole handover reads as
+         ONE shape opening instead of two layers cross-fading. `@property` is what makes
+         the stop position animatable — a plain custom property would snap. */
+      '@property --hdd-reveal {',
+      '  syntax: "<percentage>";',
+      '  inherits: false;',
+      '  initial-value: 0%;',
+      '}',
+      '[data-hdd-field][data-reveal="mask"] {',
+      '  --hdd-reveal: 0%;',
+      '  mask-image: radial-gradient(circle at 50% 50%, #000 var(--hdd-reveal), transparent calc(var(--hdd-reveal) + 14%));',
+      '  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 var(--hdd-reveal), transparent calc(var(--hdd-reveal) + 14%));',
+      '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
+      '}',
+      '[data-hdd-field][data-reveal="mask"][data-on="true"] { --hdd-reveal: 130%; }',
+      /* The inverse on the cover: its hole grows from the same centre, so the plate is
+         what remains once the backdrop has opened. */
+      '[data-hdd-backdrop][data-reveal="mask"] {',
+      '  --hdd-reveal: 0%;',
+      '  mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));',
+      '  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));',
+      '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
+      '}',
+      '[data-hdd-backdrop][data-reveal="mask"][data-on="false"] { --hdd-reveal: 150%; }',
       '[data-hdd-holder] {',
       '  position: relative;',
       '  width: min(300px, 42vw);',
@@ -2213,6 +2239,7 @@ window.__ModuleLoader__.load({
            * shows as an empty dark rectangle. */
           backdrop.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(inventory.backdrop)}")`
           backdrop.setAttribute('data-on', 'true')
+          backdrop.setAttribute('data-reveal', 'mask')
           root.appendChild(backdrop)
           coverActive = true
         } else {
@@ -2270,7 +2297,13 @@ window.__ModuleLoader__.load({
              not, so that path gets the larger budget. */
           const budget = usedClip ? TIMING.revealBudgetMs : TIMING.revealBudgetNoVideoMs
           const dropPlate = () => {
-            if (fieldName !== null) field.setAttribute('data-on', 'false')
+            if (fieldName === null) return
+            /* Remove the radial mask before fading out. Leaving it on would snap
+               `--hdd-reveal` back to 0% the moment `data-on` flips, collapsing the plate
+               towards the centre while it fades. Without the mask the exit is the plain
+               whole-layer fade it always was. */
+            field.removeAttribute('data-reveal')
+            field.setAttribute('data-on', 'false')
           }
           revealWhenHealthy(
             () => {
@@ -2300,6 +2333,9 @@ window.__ModuleLoader__.load({
           if (disposed) return
           if (fieldName !== null) {
             field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
+            /* Cover route: the plate opens from the centre with the emblem; the plain
+               route keeps the soft whole-layer fade it always had. */
+            if (coverActive) field.setAttribute('data-reveal', 'mask')
             root.appendChild(field)
             after(30, () => field.setAttribute('data-on', 'true'))
           }
