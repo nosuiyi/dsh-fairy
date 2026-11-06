@@ -547,6 +547,9 @@ window.__ModuleLoader__.load({
       '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
       '}',
       '[data-hdd-backdrop][data-reveal="mask"][data-on="false"] { --hdd-reveal: 150%; }',
+      /* As a cover the backdrop should be there almost immediately: the window has just
+         appeared and a long fade reads as "black screen, then the image". */
+      '[data-hdd-backdrop][data-cover="true"] { transition: opacity 320ms ease-out, --hdd-reveal 620ms ease-out; }',
       '[data-hdd-holder] {',
       '  position: relative;',
       '  width: min(300px, 42vw);',
@@ -1937,13 +1940,37 @@ window.__ModuleLoader__.load({
       let disposed = false
       const timers = []
       /* One clock for the whole splash, so every phase report is comparable. */
-      const splashStartedAt = typeof performance === 'object' ? performance.now() : Date.now()
+      let splashStartedAt = typeof performance === 'object' ? performance.now() : Date.now()
       const splashNow = () => (typeof performance === 'object' ? performance.now() : Date.now()) - splashStartedAt
       const after = (ms, run) => {
         timers.push(window.setTimeout(() => {
           if (!disposed) run()
         }, ms))
       }
+
+      /**
+       * Wait until the window is on screen and actually painting.
+       *
+       * The desktop shell creates the window hidden and shows it on ready-to-show, but
+       * `setTimeout` keeps firing while it is hidden — so the whole cover phase could
+       * elapse off-screen, and the user's first sight of the splash was "backdrop and
+       * emblem appear at the same moment". `requestAnimationFrame` does not run in a
+       * hidden window, which makes it the honest gate.
+       */
+      const firstVisiblePaint = () => new Promise((resolve) => {
+        const step = () => {
+          if (disposed) {
+            resolve()
+            return
+          }
+          if (document.visibilityState === 'hidden') {
+            window.setTimeout(step, 120)
+            return
+          }
+          window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
+        }
+        step()
+      })
 
       /* Exactly one backstop at a time: two of them once raced, the earlier one
          firing 130 ms after a 14.7 s animation and tearing the splash down. */
@@ -2147,6 +2174,14 @@ window.__ModuleLoader__.load({
 
       void greetingReady.then(async ({ inventory, greeting }) => {
         if (disposed) return
+        /* Everything below is measured from the first painted frame, not from page load:
+           the window can stay hidden for a second or two while the shell boots, and a
+           splash that ran during that time was, from the user's seat, a black screen
+           followed by backdrop and emblem arriving together. */
+        await firstVisiblePaint()
+        if (disposed) return
+        splashStartedAt = typeof performance === 'object' ? performance.now() : Date.now()
+        report('first-paint', { at: 0 })
         /** Which route this splash took; decides how long the exit may wait for the shell. */
         let usedClip = false
         /** True while a still backdrop is acting as the loading cover (no clip route). */
@@ -2251,6 +2286,7 @@ window.__ModuleLoader__.load({
           backdrop.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(inventory.backdrop)}")`
           backdrop.setAttribute('data-on', 'true')
           backdrop.setAttribute('data-reveal', 'mask')
+          backdrop.setAttribute('data-cover', 'true')
           root.appendChild(backdrop)
           coverActive = true
         } else {
