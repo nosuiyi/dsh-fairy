@@ -71,10 +71,10 @@ npm 页面：<https://www.npmjs.com/package/dsh-skin-hdd-fairy>
 在 **插件 → 添加插件** 里粘贴 Release 资源的 **`.tgz` 直链**：
 
 ```
-https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy-0.2.1.tgz
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.3.0/dsh-skin-hdd-fairy-0.3.0.tgz
 ```
 
-- 必须是**文件直链**（以 `.tgz` 结尾），不是 Release 页面地址；换版本时把 `v0.2.1` 与文件名一起改掉；
+- 必须是**文件直链**（以 `.tgz` 结尾），不是 Release 页面地址；换版本时把 `v0.3.0` 与文件名一起改掉；
 - 插件管理器接受 registry 包名、**tarball URL**、Git 地址与本地路径；tarball 走 pnpm 的远程打包安装，
   不触发 GitHub 的 `git ls-remote` 预检查（该检查只针对 git 地址）；
 - 仓库必须公开，否则需要额外的 Git 凭据。
@@ -85,7 +85,7 @@ https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy
 
 ```powershell
 # 先完全退出 DSH 桌面版
-dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.1.tgz
+dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.3.0.tgz
 # 也可以在「插件 → 添加插件」里直接粘贴本机绝对路径
 # 再启动 DSH → 设置 → 皮肤管理 → 切到 HDD Fairy
 ```

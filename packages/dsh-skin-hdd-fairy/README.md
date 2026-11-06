@@ -73,7 +73,7 @@ dsh plugin --profile desktop add dsh-skin-hdd-fairy
 在 **插件 → 添加插件** 里粘贴 Release 资源的 `.tgz` 直链：
 
 ```
-https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy-0.2.1.tgz
+https://github.com/nosuiyi/dsh-fairy/releases/download/v0.3.0/dsh-skin-hdd-fairy-0.3.0.tgz
 ```
 
 插件管理器接受 tarball URL（走 pnpm 的远程打包安装），因此不需要先下载到本地；
@@ -83,7 +83,7 @@ https://github.com/nosuiyi/dsh-fairy/releases/download/v0.2.1/dsh-skin-hdd-fairy
 
 ```powershell
 # 先完全退出 DSH 桌面版
-dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.2.1.tgz
+dsh plugin --profile desktop add <路径>/dsh-skin-hdd-fairy-0.3.0.tgz
 ```
 
 发布件在 [GitHub Releases](https://github.com/nosuiyi/dsh-fairy/releases)。
