@@ -1024,6 +1024,22 @@ window.__ModuleLoader__.load({
       return greeting.context
     }
 
+    /**
+     * Wait until the context is really running before scheduling anything on it.
+     *
+     * An `AudioContext` created without a user gesture starts `suspended`. Scheduling
+     * `start(currentTime + 0.02)` on a suspended context does not wait: the clock is
+     * not advancing, so once `resume()` lands the source is already a few hundred
+     * milliseconds in — the beginning of the greeting is swallowed. Resume first, then
+     * read `currentTime`.
+     */
+    function ensureRunning(context) {
+      if (context === null || context === undefined) return Promise.resolve(null)
+      if (context.state === 'running') return Promise.resolve(context)
+      const resumed = typeof context.resume === 'function' ? context.resume() : null
+      return Promise.resolve(resumed).then(() => context, () => context)
+    }
+
     /** Fetch and decode one clip ahead of the moment it is needed. */
     function preloadGreeting(url) {
       if (greeting.requested) return Promise.resolve()
@@ -1061,12 +1077,18 @@ window.__ModuleLoader__.load({
       if (settings.voice === false) return Promise.resolve()
       const context = audioContext()
       if (greeting.buffer !== null && context !== null) {
-        const node = context.createBufferSource()
-        node.buffer = greeting.buffer
-        node.connect(context.destination)
-        node.start(context.currentTime + 0.02)
-        const seconds = greeting.buffer.duration
-        return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, seconds) * 1000))
+        /* Resume first: see `ensureRunning` for why scheduling before it eats the
+           opening syllables. */
+        return ensureRunning(context).then((running) => {
+          if (running === null || greeting.buffer === null) return undefined
+          const node = running.createBufferSource()
+          node.buffer = greeting.buffer
+          node.connect(running.destination)
+          /* A small beat after the resume, measured on the live clock. */
+          node.start(running.currentTime + 0.05)
+          const seconds = greeting.buffer.duration
+          return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, seconds) * 1000))
+        })
       }
       if (greeting.blobUrl !== null) {
         const element = new Audio(greeting.blobUrl)
@@ -1110,13 +1132,12 @@ window.__ModuleLoader__.load({
             file: picked.file,
             fallback: picked.fallback,
           })
-          /* Without a splash there is no earlier gesture to unlock audio; resume the
-             context if the platform left it suspended, then play. */
-          const context = audioContext()
-          if (context !== null && context.state === 'suspended') {
-            void context.resume().catch(() => {})
-          }
-          return preloadGreeting(picked.url).then(() => playGreeting())
+          /* Without a splash there is no earlier gesture to unlock audio. Resume the
+             context *and wait for it* before decoding/playing: scheduling on a
+             suspended context silently skips the opening syllables. */
+          return ensureRunning(audioContext())
+            .then(() => preloadGreeting(picked.url))
+            .then(() => playGreeting())
         })
         .catch(() => {
           /* A missing voice package is a normal state, not an error worth surfacing. */
