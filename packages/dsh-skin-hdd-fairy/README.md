@@ -397,6 +397,12 @@ node --check lib/client.js
 4. **侧栏徽记只在展开态出现（有意为之）**：`sidebar.footer.action` 在收起（compact rail）时不渲染；新会话页的 `conversation.hero.brand.mark` 本身是空座，直接注册即可。左上角的品牌位（`sidebar.brand.mark` / `sidebar.brand.name`）在**当前 build 里占不到**（壳子占着 single 座），所以用 CSS 原位替换：藏掉壳子的内联 SVG，再画上本皮肤的矢量与文字。守卫条件 `:not(:has([data-hdd-brand-mark]))` 保证——哪天槽位能占了，这两条规则会自动让位，不会重复显示。
    收起态里另外两个单座（`sidebar.brand.mark` 在 rail 里的品牌标、`sidebar.toggle.badge` 通知角标）
    也已被壳占用——注册只会替换壳自己的内容，所以**不做**。
+5. **不要用 `<audio>` 元素播提示音/问候**：从 DSH **0.2.2-rc.1** 起（Electron 仍是 44.7.0、Chromium 未变），
+   壳子把插件路由的响应改经流式网关中继，媒体元素经常"够到一点数据就先出声"，
+   **开头几十毫秒被吞掉**；0.2.1-rc.3 走的是本机 HTTP 直连，所以同一份素材当时没有这个问题。
+   现在音频统一走 **fetch → `decodeAudioData` → 在 AudioContext 上按采样零排期**
+   （`ensureRunning` 先确保上下文已 running，否则 `start(currentTime + …)` 会在挂起期间被无声消耗）；
+   元素播放只在没有 AudioContext 或解码失败时兜底。
 
 ## 发布件包含什么
 
