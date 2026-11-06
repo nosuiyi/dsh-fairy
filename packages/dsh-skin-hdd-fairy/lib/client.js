@@ -513,13 +513,20 @@ window.__ModuleLoader__.load({
       '  display: block; background: #05080e;',
       '}',
       /* The drawn highlight plate the emblem sits on after the animation is cut.
-         It fades in with the emblem and fades out before the emblem flies away. */
+         It fades in with the emblem and fades out before the emblem flies away.
+         The entrance grows from the centre (`scale`) instead of a radial mask: mask and
+         custom-property transitions are main-thread only, and the shell's own boot work
+         stalled them by ~1s, so the "ring" arrived long after the emblem. Transform and
+         opacity are compositor animations and keep their timing while the shell boots. */
       '[data-hdd-field] {',
       '  position: absolute; inset: 0;',
       '  background-position: center; background-size: cover; background-repeat: no-repeat;',
-      '  opacity: 0; transition: opacity 620ms ease-out;',
+      '  opacity: 0;',
+      '  transform: scale(0.04);',
+      '  transform-origin: 50% 50%;',
+      '  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 620ms ease-out;',
       '}',
-      '[data-hdd-field][data-on="true"] { opacity: 1; }',
+      '[data-hdd-field][data-on="true"] { opacity: 1; transform: scale(1); }',
       '[data-hdd-field][data-on="false"] { opacity: 0; transition: opacity 1150ms ease-in; }',
       /* ---- radial mask reveal (no-clip route only) ----
          The emblem pops out of the centre; the plate should come from the same place and
@@ -531,13 +538,6 @@ window.__ModuleLoader__.load({
       '  inherits: false;',
       '  initial-value: 0%;',
       '}',
-      '[data-hdd-field][data-reveal="mask"] {',
-      '  --hdd-reveal: 0%;',
-      '  mask-image: radial-gradient(circle at 50% 50%, #000 var(--hdd-reveal), transparent calc(var(--hdd-reveal) + 14%));',
-      '  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 var(--hdd-reveal), transparent calc(var(--hdd-reveal) + 14%));',
-      '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
-      '}',
-      '[data-hdd-field][data-reveal="mask"][data-on="true"] { --hdd-reveal: 130%; }',
       /* The inverse on the cover: its hole grows from the same centre, so the plate is
          what remains once the backdrop has opened. */
       '[data-hdd-backdrop][data-reveal="mask"] {',
@@ -2315,11 +2315,9 @@ window.__ModuleLoader__.load({
           const budget = usedClip ? TIMING.revealBudgetMs : TIMING.revealBudgetNoVideoMs
           const dropPlate = () => {
             if (fieldName === null) return
-            /* Remove the radial mask before fading out. Leaving it on would snap
-               `--hdd-reveal` back to 0% the moment `data-on` flips, collapsing the plate
-               towards the centre while it fades. Without the mask the exit is the plain
-               whole-layer fade it always was. */
-            field.removeAttribute('data-reveal')
+            /* The entrance is a compositor transform now, so the exit needs nothing more
+               than the opacity flip — it keeps shrinking from `scale(1)` only if a
+               `data-on="false"` rule said so, and none does. */
             field.setAttribute('data-on', 'false')
           }
           revealWhenHealthy(
@@ -2359,9 +2357,6 @@ window.__ModuleLoader__.load({
           }
           if (fieldName !== null) {
             field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
-            /* Cover route: the plate opens from the centre; the plain route keeps the
-               soft whole-layer fade it always had. */
-            if (coverActive) field.setAttribute('data-reveal', 'mask')
             root.appendChild(field)
             after(20, () => {
               if (disposed) return
