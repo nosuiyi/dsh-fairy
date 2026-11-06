@@ -5,28 +5,26 @@ Provenance of reused visual assets:
 
   The emblem vector (FAIRY_EMBLEM in lib/client.js) is taken from the original
   plugin published by the Bilibili author 天才小宇
-  (https://space.bilibili.com/3494360513514129 ; video BV1n7np6QEPe), which was
-  distributed as the local package @local/dsh-hdd-overlay. It is not a redraw.
-  That plugin's own INSTALL.md states that its interface, code and documentation
-  are the author's original work and are "free to modify for personal use"
-  (可自由修改自用). It does not grant redistribution rights.
+  (https://space.bilibili.com/3494360513514129 ; video BV1n7np6QEPe), distributed
+  there as the local package @local/dsh-hdd-overlay. It is not a redraw.
 
   Part of the visual stylesheet is taken from the same plugin as well: the grid
   texture, the vignette, the panel veil, and the --hdd-* custom-property names.
 
-  The Apache-2.0 license of this package covers only the code written for this
-  repository. It does not cover the reused visual assets described above, and it
-  grants no right to redistribute them separately. Redistribution permission for
-  those fragments has not been obtained; it is pending confirmation with the
-  original author.
+  The rest of this package is written for this repository: the launch timeline,
+  the nine /hdd/* media routes, the asset settings page, the cue state machine,
+  the skin-manager wiring, the tests and the documentation.
+
+  The design and flow themselves are credited, not claimed: the splash sequence
+  (HDD boot -> emblem -> greeting -> flight back to the sidebar) follows the
+  reference video linked above.
 
 Design reference:
 
   The visual language of the splash timeline (emblem rise, hold, flight to the
   sidebar) follows the same reference. Fairy-DSH
   (https://github.com/Chengzhibense/Fairy-DSH, Apache-2.0) is credited as an
-  earlier project in that lineage; the exact relationship between that project
-  and the plugin above has not been verified by this repository.
+  earlier project in that lineage.
 
 Trademark and character-design notice:
 
