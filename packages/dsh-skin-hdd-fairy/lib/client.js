@@ -1826,7 +1826,7 @@ window.__ModuleLoader__.load({
           button('backdrop', '选择…', false, () => { void startBrowse('backdrop', '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp') }),
           button('open-backdrop', '打开文件夹', false, () => reveal('backdrop')),
         ], 'backdrop'),
-        row('高光板', inventory !== null && typeof inventory.field === 'string' ? inventory.field : '未放置（可选）', [
+        row('徽记背景图', inventory !== null && typeof inventory.field === 'string' ? inventory.field : '未放置（可选）', [
           button('field', '选择…', false, () => { void startBrowse('field', '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp') }),
           button('open-field', '打开文件夹', false, () => reveal('field')),
         ], 'field'),
@@ -2718,7 +2718,7 @@ window.__ModuleLoader__.load({
                 type: 'select',
                 label: '开屏内容',
                 labelEn: 'Splash content',
-                description: '自动 = 有动画播动画，没有动画就用背景图；不播视频 = 跳过动画，背景图与高光板照常；直接进入 = 不播开屏，连徽记动画也省掉。',
+                description: '自动 = 有动画播动画，没有动画就用开屏背景图；不播视频 = 跳过动画：开屏背景图先作幕布，再从中心露出徽记背景图；直接进入 = 不播开屏，连徽记动画也省掉。',
                 descriptionEn: 'Auto plays the clip, else the backdrop; no-video skips the clip but keeps the backdrop and the plate; direct opens straight into the shell with no splash.',
                 defaultValue: 'none',
                 options: [

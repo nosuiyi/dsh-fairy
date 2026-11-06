@@ -127,7 +127,7 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 assets/
   boot.mp4 | boot.webm                                   开屏动画（可选）
   boot.png | .jpg | .webp                                开屏背景图（可选）
-  boot-field.png                                              高光板（可选）
+  boot-field.png                                              徽记背景图（可选）
   greeting/<dawn|morning|noon|afternoon|evening|night>/*  问候语音，按文件夹分档，文件名随意
   cue/<thinking|done|failed>/*                                回合提示音，按种类分文件夹
 ```
@@ -210,7 +210,7 @@ node tools/check-lines.mjs docs/voice-lines.final.json
 ## 素材与版权
 
 - **本仓库不含任何音视频素材。** 发布件（npm 包 / Release 资产）只有代码、契约、文档与许可；
-  开屏动画、背景图、高光板、问候语音与提示音一律由用户自备。
+  开屏动画、背景图、徽记背景图、问候语音与提示音一律由用户自备。
   仓库里唯一的图片是 `docs/assets/screenshot.png` —— 本文顶部的效果截图，不随包分发
   （`files` 白名单里没有 `docs/`）。图里的徽记是《绝区零》的 **Fairy**（H.D.D. 的终端形象），
   徽记矢量取自原作插件、形象属于《绝区零》，来历与声明见 `NOTICE`；本项目**不主张任何相关 IP 的权利**。
