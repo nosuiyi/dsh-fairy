@@ -2192,6 +2192,11 @@ window.__ModuleLoader__.load({
       const lastPlayed = new Map()
       const MIN_GAP_MS = 900
 
+      /** Decoded cue clips, keyed by file name; playback then starts at sample zero. */
+      const cueBuffers = new Map()
+      /** The buffer source currently scheduled, or null. One cue sounds at a time. */
+      let cueSource = null
+
       /**
        * Cue sequence numbers already played in this document.
        *
@@ -2214,6 +2219,50 @@ window.__ModuleLoader__.load({
         }
       }
 
+      /**
+       * Play a cue clip through the AudioContext instead of a media element.
+       *
+       * A media element starts when the browser decides it has enough data, and the
+       * opening tens of milliseconds are regularly dropped — every cue then began
+       * mid-syllable. A decoded buffer is scheduled on the audio clock and starts
+       * exactly at sample zero.
+       *
+       * @returns whether the cue was scheduled; `false` lets the caller fall back.
+       */
+      const playCueAudio = async (file) => {
+        const context = audioContext()
+        if (context === null) return false
+        const running = await ensureRunning(context)
+        if (running === null) return false
+        if (cueSource !== null) return true
+        let buffer = cueBuffers.get(file)
+        if (buffer === undefined) {
+          const response = await fetch(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
+          if (!response.ok) return false
+          const bytes = await response.arrayBuffer()
+          buffer = await running.decodeAudioData(bytes.slice(0))
+          cueBuffers.set(file, buffer)
+        }
+        if (cueSource !== null) return true
+        const gain = running.createGain()
+        gain.gain.value = CUE_VOLUME
+        gain.connect(running.destination)
+        const node = running.createBufferSource()
+        node.buffer = buffer
+        node.connect(gain)
+        node.onended = () => {
+          if (cueSource === node) cueSource = null
+          try {
+            gain.disconnect()
+          } catch {
+            /* already gone */
+          }
+        }
+        cueSource = node
+        node.start(running.currentTime + 0.03)
+        return true
+      }
+
       const playCue = (kind) => {
         /* The poller also feeds the status label, so it stays up even when the sounds
            are switched off — the *sound* is what this line gates. */
@@ -2222,16 +2271,22 @@ window.__ModuleLoader__.load({
         if (inventory === null || inventory.cues === undefined) return
         const file = inventory.cues[kind]
         if (file === undefined || file === null) return
+        if (cueSource !== null) return
         if (playing !== null && playing.paused === false) return
         const now = Date.now()
         const previous = lastPlayed.get(kind) ?? 0
         if (now - previous < MIN_GAP_MS) return
         lastPlayed.set(kind, now)
-        const element = new Audio(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
-        element.volume = CUE_VOLUME
-        playing = element
-        const playback = element.play()
-        if (playback && typeof playback.catch === 'function') playback.catch(() => {})
+        /* Decoded playback first (no swallowed outset); the element is the fallback for
+           a platform where `AudioContext` is unavailable or refuses the clip. */
+        void playCueAudio(file).then((scheduled) => {
+          if (scheduled || settings.cues === false) return
+          const element = new Audio(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
+          element.volume = CUE_VOLUME
+          playing = element
+          const playback = element.play()
+          if (playback && typeof playback.catch === 'function') playback.catch(() => {})
+        }).catch(() => {})
       }
 
       /** Identity of this document in the cue feed, so the Host can count clients. */

@@ -21,6 +21,10 @@
 
 ### 修复
 
+- **提示音开头被吞掉**：提示音原先用 `<audio>` 元素播放，浏览器决定"够不够数据"才开始，
+  开头几十毫秒经常被丢掉，听感就是每个提示音都从字中间起。改为**取字节 → `decodeAudioData` →
+  在 AudioContext 上按采样零排期**（`playCueAudio`，带缓冲缓存与 `.3s` 单播守卫）；
+  元素播放只在该平台没有 AudioContext 或解码失败时兜底。
 - **问候语音开头被吞掉**：`AudioContext` 在未经用户手势时是 `suspended`，此时
   `start(currentTime + 0.02)` 不会等待——等 `resume()` 生效时音源已经"无声播放"了几百毫秒，
   于是每次开口都从中间开始。改为**先 `resume()` 并等待其完成，再读取 `currentTime` 排期**
