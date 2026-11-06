@@ -171,72 +171,6 @@ window.__ModuleLoader__.load({
     const PLAY_LEAD_S = 0.6
 
     /**
-     * TEMP(cue probe): put the playback facts in the window title.
-     *
-     * The title is the only surface that reaches outside the renderer without a working
-     * report channel; removed as soon as the "swallowed onset" question is settled.
-     */
-    let probeLast = 'boot'
-    let probeChannels = ''
-
-    function writeProbeTitle() {
-      try {
-        document.title = `HDD-CUE|${probeLast}|ch:${probeChannels}`
-      } catch {
-        /* diagnostics only */
-      }
-    }
-
-    function probeCue(text) {
-      probeLast = text
-      writeProbeTitle()
-    }
-
-    /**
-     * TEMP(channel probe): which HTTP methods still get an answer after the update.
-     *
-     * `/hdd/report` accepts GET (returns the log tail) and POST (appends a line). The
-     * Host log has shown no client lines at all since the update, so the question is
-     * whether the renderer's POST reaches the route at all.
-     */
-    async function probeHttpChannels() {
-      const parts = []
-      try {
-        const got = await fetch('/hdd/report')
-        parts.push(`GET=${got.status}`)
-      } catch {
-        parts.push('GET=err')
-      }
-      /* The reporting call itself: 204 means the new Host handler accepted it, 200
-         means an older handler answered and the client is still mute. */
-      try {
-        const wrote = await fetch('/hdd/report?event=channel-probe&detail=null')
-        parts.push(`REPGET=${wrote.status}`)
-      } catch {
-        parts.push('REPGET=err')
-      }
-      try {
-        const posted = await fetch('/hdd/report', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ event: 'channel-probe', detail: null, perf: -1, visibility: 'probe' }),
-        })
-        parts.push(`POST=${posted.status}`)
-      } catch {
-        parts.push('POST=err')
-      }
-      try {
-        const bin = await fetch('/hdd/asset?path=cue/thinking.m4a')
-        const bytes = bin.ok ? (await bin.arrayBuffer()).byteLength : -1
-        parts.push(`ASSET=${bin.status}/${bytes}`)
-      } catch {
-        parts.push('ASSET=err')
-      }
-      probeChannels = parts.join(',')
-      writeProbeTitle()
-    }
-
-    /**
      * Fire-and-forget diagnostics.
      *
      * The splash is the one feature whose failure mode is "nothing happens", so it
@@ -2346,13 +2280,11 @@ window.__ModuleLoader__.load({
       const playCueAudio = async (file) => {
         const context = audioContext()
         if (context === null) {
-          probeCue('noCtx')
           return false
         }
         const startedAt = Date.now()
         const running = await ensureRunning(context)
         if (running === null) {
-          probeCue('noRun')
           return false
         }
         if (cueSource !== null) return true
@@ -2360,14 +2292,12 @@ window.__ModuleLoader__.load({
         if (buffer === undefined) {
           const response = await fetch(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
           if (!response.ok) {
-            probeCue(`net${response.status}`)
             return false
           }
           const bytes = await response.arrayBuffer()
           try {
             buffer = await running.decodeAudioData(bytes.slice(0))
           } catch {
-            probeCue(`dec${bytes.byteLength}`)
             return false
           }
           cueBuffers.set(file, buffer)
@@ -2406,17 +2336,14 @@ window.__ModuleLoader__.load({
         /* The poller also feeds the status label, so it stays up even when the sounds
            are switched off — the *sound* is what this line gates. */
         if (settings.cues === false) {
-          probeCue('off')
           return
         }
         const inventory = info.value
         if (inventory === null || inventory.cues === undefined) {
-          probeCue('noinv')
           return
         }
         const file = inventory.cues[kind]
         if (file === undefined || file === null) {
-          probeCue(`no${kind}`)
           return
         }
         if (cueSource !== null) return
@@ -2429,7 +2356,6 @@ window.__ModuleLoader__.load({
            a platform where `AudioContext` is unavailable or refuses the clip. */
         void playCueAudio(file).then((scheduled) => {
           if (scheduled || settings.cues === false) return
-          probeCue('elem')
           const element = new Audio(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
           element.volume = CUE_VOLUME
           playing = element
@@ -2738,9 +2664,6 @@ window.__ModuleLoader__.load({
         cues = installCues(ctx)
         /* Fresh page = "已就位"; the feed moves it on from there. */
         setWorkerState('ready')
-        /* TEMP(channel probe): one shot per page load; the result rides along in the
-           window title next to the cue facts. */
-        void probeHttpChannels()
 
         /* The manager can turn the whole timeline off; the mark and the cues are
            independent of it, so the skin still identity-marks the sidebar.

@@ -21,14 +21,22 @@
 
 ### 修复
 
+- **诊断日志一直静默失败**：`lib/index.js` 里 `MAX_LOG_BYTES` 被引用却从未声明，`/hdd/report` 的每次写入
+  都在那一行抛 `ReferenceError` 并被路由自身的 `catch` 吞掉——**返回 204，日志里却什么都没有**。
+  客户端上报（`apply`、`assets`、`splash-*`、`cue-play`）因此全部丢失，排查一直在"看不见客户端"的状态下进行。
+  现已补上常量（2 MB），并让 `GET /hdd/report?event=…&detail=…` 也能写入（GET 通道实测最稳）。
+  完整记录见 `docs/findings-2026-11-06-dsh-022-media-channels.md`。
 - **提示音开头被吞掉**：提示音原先用 `<audio>` 元素播放，浏览器决定"够不够数据"才开始，
   开头几十毫秒经常被丢掉，听感就是每个提示音都从字中间起。改为**取字节 → `decodeAudioData` →
   在 AudioContext 上按采样零排期**（`playCueAudio`，带缓冲缓存与单播守卫）；
   元素播放只在该平台没有 AudioContext 或解码失败时兜底。
 - **"静音一段时间后的第一声"仍会缺开头**（间歇性）：即使解码播放，音频端点闲置后（Windows 电源管理、
   蓝牙耳机）需要时间唤醒，而提前 30ms 排期的音源已经在"播放"，设备还没出声。两条对策：
-  ①`ensureRunning` 成功后挂一个 **0 dB 静音振荡器保持流不中断**（`startKeepAlive`），端点不会被休眠；
-  ②所有播放的**排期提前量统一为 `PLAY_LEAD_S = 0.12s`**（原 0.02–0.05s），够设备醒来且听感仍是"立即"。
+  ①`ensureRunning` 成功后挂一个 **-80 dB（0.0001 增益）静音振荡器**保持流不中断（`startKeepAlive`）——
+  用 0 增益有些混音器会判定为空闲，故留极小信号；
+  ②所有播放的**排期提前量统一为 `PLAY_LEAD_S = 0.6s`**（原 0.02–0.05s），实测足以覆盖设备唤醒。
+  每次播放另记一行 `cue-play`（`via/ctx/lead/dur/setupMs/keep`），"又吞音了"可以凭日志定位。
+  素材侧已排除：`cue/*.m4a` 都是零前导静音起音，因此任何起播延迟都会被立刻听成缺字。
 - **`AudioContext` 跨热重载复用**（`window.__hddAudioContext`）：热重载会让模块重新求值，
   旧上下文残留会占用 Chrome 对同页活动上下文的配额，新建的那个可能一直 `suspended`，
   于是提示音退回元素播放、开头又被吞。现在同一文档只保留一个上下文。
