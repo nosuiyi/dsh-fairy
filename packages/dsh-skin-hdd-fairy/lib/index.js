@@ -64,7 +64,7 @@ const assetRoot = resolveAssetRoot
 const ASSET_KINDS = {
   video: { dir: '', stem: 'boot', ext: ['.mp4', '.webm'], max: 96 * 1024 * 1024 },
   backdrop: { dir: '', stem: 'boot', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
-  field: { dir: '', stem: 'field', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
+  field: { dir: '', stem: 'boot-field', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
   greeting: { dir: 'greeting', ext: ['.m4a', '.mp3', '.ogg', '.opus', '.wav'], max: 8 * 1024 * 1024 },
   cue: { dir: 'cue', ext: ['.m4a', '.mp3', '.ogg', '.opus', '.wav'], max: 4 * 1024 * 1024 },
 }
@@ -176,6 +176,9 @@ async function resolveTarget(kindName, extension, bucket, cue, original) {
   } else {
     name = `${spec.stem}${extension}`
     await dropSiblings(base, spec.stem, name, spec.ext)
+    /* The highlight plate was once imported as `field.<ext>`; replacing it must clear
+       that older name too, or the reader would keep finding the stale file first. */
+    if (kindName === 'field') await dropSiblings(base, 'field', name, spec.ext)
   }
   return { dir: base, name, spec }
 }

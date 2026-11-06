@@ -170,7 +170,7 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 assets/
   boot.mp4            开屏动画（.mp4 / .webm，可选）
   boot.png            开屏背景图（.png/.jpg/.jpeg/.webp，可选）
-  field.png           高光板（可选）
+  boot-field.png      高光板（可选；旧的 `field.png` 也认）
   greeting/           ← 六个档位文件夹，往里丢就是，**不用改名**
     dawn/             深夜 0–5
     morning/          早上 5–11

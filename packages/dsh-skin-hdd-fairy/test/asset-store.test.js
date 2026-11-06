@@ -14,6 +14,7 @@ import test from 'node:test'
 import {
   bucketById,
   bucketForHour,
+  readField,
   readHour,
   pickGreeting,
   readCues,
@@ -125,6 +126,20 @@ test('inventory finds a backdrop and reports bucket counts', async () => {
     assert.equal(inventory.exists, true)
     assert.equal(inventory.backdrop, 'boot.webp')
     assert.equal(inventory.buckets.find((bucket) => bucket.id === 'evening').count, 1)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('the highlight plate is found as boot-field.*, and the older field.* still counts', async () => {
+  const root = await withAssets(async (dir) => {
+    await writeFile(join(dir, 'field.webp'), 'x')
+  })
+  try {
+    assert.equal(await readField(root), 'field.webp')
+    await writeFile(join(root, 'boot-field.png'), 'x')
+    /* The canonical name wins once it exists, whatever the extension order. */
+    assert.equal(await readField(root), 'boot-field.png')
   } finally {
     await rm(root, { recursive: true, force: true })
   }

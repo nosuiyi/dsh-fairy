@@ -127,7 +127,7 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 assets/
   boot.mp4 | boot.webm                                   开屏动画（可选）
   boot.png | .jpg | .webp                                开屏背景图（可选）
-  field.png                                              高光板（可选）
+  boot-field.png                                              高光板（可选）
   greeting/<dawn|morning|noon|afternoon|evening|night>/*  问候语音，按文件夹分档，文件名随意
   cue/{thinking,done,failed}.m4a                         回合提示音
 ```

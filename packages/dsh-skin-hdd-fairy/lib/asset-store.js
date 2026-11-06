@@ -37,6 +37,16 @@ const BACKDROP_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp']
 const VIDEO_EXTENSIONS = ['.mp4', '.webm']
 
 /**
+ * Filename stems accepted for the drawn highlight plate, in preference order.
+ *
+ * `boot-field` groups it with the other launch assets and is what the importer writes;
+ * `field` is accepted as well because earlier docs described that name and a plate
+ * imported through the settings page used to land as `field.<ext>` — which this reader
+ * could not find at all.
+ */
+const FIELD_STEMS = ['boot-field', 'field']
+
+/**
  * Time-of-day buckets. Boundaries are half-open `[from, to)` on the local hour,
  * so every hour belongs to exactly one bucket and the last one closes the day.
  */
@@ -210,12 +220,14 @@ export async function readBackdrop(root) {
  */
 export async function readField(root) {
   const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
-  for (const extension of BACKDROP_EXTENSIONS) {
-    const match = entries.find(
-      (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === 'boot-field'
-        && extname(entry.name).toLowerCase() === extension,
-    )
-    if (match !== undefined) return match.name
+  for (const stem of FIELD_STEMS) {
+    for (const extension of BACKDROP_EXTENSIONS) {
+      const match = entries.find(
+        (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === stem
+          && extname(entry.name).toLowerCase() === extension,
+      )
+      if (match !== undefined) return match.name
+    }
   }
   return null
 }
