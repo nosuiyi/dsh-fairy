@@ -47,7 +47,6 @@ window.__ModuleLoader__.load({
 
     /** Live values of the settings this skin exposes. */
     const settings = {
-      splash: true,
       /* The shipped default is no splash at all: the skin opens straight into
          the interface, and the sidebar mark / palette / brand seats are all the
          identity a first launch needs. `auto` is one select away for anyone who
@@ -101,7 +100,6 @@ window.__ModuleLoader__.load({
      */
     function applySkinState(state) {
       const next = state === null || state === undefined ? {} : (state.values ?? {})
-      settings.splash = next.splash !== false
       settings.voice = next.voice !== false
       settings.cues = next.cues !== false
       settings.markGlow = next.markGlow !== false
@@ -111,9 +109,14 @@ window.__ModuleLoader__.load({
       /* Three sources: `auto` (clip when present, else the backdrop canvas),
          `novideo` (never play the clip; the backdrop stays available as the canvas) and
          `none` (no splash at all — straight into the shell). `mark` was this option's
-         old value and folds into `novideo`, so a stored setting keeps working. */
+         old value and folds into `novideo`, so a stored setting keeps working.
+         The old separate `splash` switch folded into this one: `false` there means the
+         same thing as `none` here, and keeping both let the manager show two controls
+         that contradicted each other. */
       const source = next.splashSource === 'mark' ? 'novideo' : next.splashSource
-      settings.splashSource = source === 'novideo' || source === 'none' ? source : 'auto'
+      settings.splashSource = next.splash === false
+        ? 'none'
+        : (source === 'novideo' || source === 'none' ? source : 'auto')
       /* 0 is a real value here ("no cut"), so it must survive the numeric parse. */
       settings.animEndS = typeof next.animEndS === 'number' && Number.isFinite(next.animEndS) && next.animEndS > 0
         ? Math.min(120, next.animEndS)
@@ -2711,15 +2714,6 @@ window.__ModuleLoader__.load({
             titleEn: 'HDD Fairy',
             settings: [
               {
-                key: 'splash',
-                type: 'boolean',
-                label: '开机动画',
-                labelEn: 'Launch animation',
-                description: '开屏视频、徽记与飞向侧栏的完整时间轴。关闭后各设置仍保留，下次启动不再播放。',
-                descriptionEn: 'The splash clip, the mark and the flight to the sidebar. Turning it off skips the whole timeline on the next launch.',
-                defaultValue: true,
-              },
-              {
                 key: 'splashSource',
                 type: 'select',
                 label: '开屏内容',
@@ -2727,7 +2721,6 @@ window.__ModuleLoader__.load({
                 description: '自动 = 有动画播动画，没有动画就用背景图；不播视频 = 跳过动画，背景图与高光板照常；直接进入 = 不播开屏，连徽记动画也省掉。',
                 descriptionEn: 'Auto plays the clip, else the backdrop; no-video skips the clip but keeps the backdrop and the plate; direct opens straight into the shell with no splash.',
                 defaultValue: 'none',
-                visibleWhen: { key: 'splash', values: [true] },
                 options: [
                   { value: 'auto', label: '自动（有动画就播动画）', labelEn: 'Auto (clip first)' },
                   { value: 'novideo', label: '不播视频（用背景图）', labelEn: 'Skip the clip' },
@@ -2746,7 +2739,6 @@ window.__ModuleLoader__.load({
                 max: 40,
                 step: 0.1,
                 unit: 's',
-                visibleWhen: { key: 'splash', values: [true] },
               },
               {
                 key: 'voice',
@@ -2869,7 +2861,7 @@ window.__ModuleLoader__.load({
            timeline entirely, mark included, and opens straight into the shell.
            With no timeline the greeting has nowhere to live, so it is played on its
            own shortly after the shell appears (same fetch/preload/play path). */
-        if (settings.splash && settings.splashSource !== 'none') {
+        if (settings.splashSource !== 'none') {
           mountSplash()
         } else {
           ctx.effect(() => {
