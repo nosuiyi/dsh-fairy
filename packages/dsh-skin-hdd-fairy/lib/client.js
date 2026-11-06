@@ -150,6 +150,14 @@ window.__ModuleLoader__.load({
       fieldHoldMs: 1700,
       /** Plate fade-out duration; the flight starts when it finishes. */
       fieldOutMs: 1150,
+      /**
+       * How long the exit may wait for the shell to finish its boot layout before it
+       * gives up and lets the hard cut do the job. The clip path is generous because a
+       * long clip hides the wait; the no-video path needs its own, larger budget or it
+       * never becomes healthy in time.
+       */
+      revealBudgetMs: 4000,
+      revealBudgetNoVideoMs: 6000,
       gather: 430,
       fly: 1400,
       fadeOut: 520,
@@ -1948,7 +1956,17 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const revealWhenHealthy = (onHealthy, onGiveUp) => {
+      /**
+       * Poll until the shell has finished its boot layout, then hand over.
+       *
+       * `budgetMs` is not cosmetic: the shell only leaves `html{display:grid}` once its
+       * own boot work is done, and the no-video splash reaches its exit after ~2.4s —
+       * far earlier than a clip that plays for thirteen seconds. A 1.6s budget therefore
+       * always expired on that path, the reveal was skipped, and the splash ended in a
+       * hard cut while the backdrop was still on screen.
+       */
+      const revealWhenHealthy = (onHealthy, onGiveUp, budgetMs = TIMING.revealBudgetMs) => {
+        const limit = Math.max(1, Math.ceil(budgetMs / 200))
         let ticks = 0
         const check = () => {
           if (disposed) return
@@ -1956,7 +1974,7 @@ window.__ModuleLoader__.load({
             onHealthy()
             return
           }
-          if (ticks >= 8) {
+          if (ticks >= limit) {
             onGiveUp()
             return
           }
@@ -2086,12 +2104,15 @@ window.__ModuleLoader__.load({
 
       void greetingReady.then(async ({ inventory, greeting }) => {
         if (disposed) return
+        /** Which route this splash took; decides how long the exit may wait for the shell. */
+        let usedClip = false
         if (inventory === null) {
           report('assets-missing', { reason: 'the skin host is not answering /hdd/info' })
           hint.textContent = '未检测到素材包：本次仅显示徽记。'
           root.appendChild(hint)
         } else if (settings.splashSource !== 'novideo'
           && typeof inventory.video === 'string' && inventory.video !== '') {
+          usedClip = true
           video.src = `/hdd/asset?path=${encodeURIComponent(inventory.video)}`
           /* The video element stays out of the document: a playing video with a
              compositing quad is what promotes to the white overlay plane on this
@@ -2204,42 +2225,60 @@ window.__ModuleLoader__.load({
         }
         root.appendChild(holder)
         beginEmblem()
+
+        /**
+         * The single way out of the splash.
+         *
+         * Every route — clip ended, no clip, no greeting, hold expired — comes through
+         * here, so the exit is the same sequence the clip path always had: wait for the
+         * shell, fade the splash background (and the plate, when there is one) over
+         * `fieldOutMs`, then fly the emblem. Previously only the "has a plate" branch
+         * did this; without a plate the splash ended in a hard cut, which is why the
+         * backdrop seemed to sit there until the emblem vanished.
+         */
+        let exiting = false
+        const exit = () => {
+          if (exiting || disposed) return
+          exiting = true
+          /* A clip buys the shell thirteen-plus seconds to boot; a still backdrop does
+             not, so that path gets the larger budget. */
+          const budget = usedClip ? TIMING.revealBudgetMs : TIMING.revealBudgetNoVideoMs
+          const dropPlate = () => {
+            if (fieldName !== null) field.setAttribute('data-on', 'false')
+          }
+          revealWhenHealthy(
+            () => {
+              revealApp()
+              dropPlate()
+              after(TIMING.fieldOutMs, flyAway)
+            },
+            () => {
+              /* The shell never filled the window: keep it covered rather than unveil a
+                 narrow, half-built interface. The plate still leaves, and the splash
+                 teardown finishes the job. */
+              report('reveal-skipped', { reason: 'shell narrower than the window' })
+              dropPlate()
+              after(TIMING.fieldOutMs, flyAway)
+            },
+            budget,
+          )
+        }
+
         after(TIMING.greetingAt, () => {
           if (disposed) return
           if (greeting === null) {
-            after(TIMING.holdAfter, flyAway)
+            after(TIMING.holdAfter, exit)
             return
           }
           const spoken = playGreeting().then(() => {
             if (disposed) return
-            after(TIMING.holdAfter, flyAway)
+            after(TIMING.holdAfter, exit)
           })
-          after(TIMING.maxHold, flyAway)
+          after(TIMING.maxHold, exit)
           void spoken
           /* With a highlight plate the flight follows the plate's fade, not the end
              of the greeting: the image is what leaves, the emblem is what stays. */
-          if (fieldName !== null) {
-            after(TIMING.fieldHoldMs, () => {
-              /* The point of the fade is to uncover the shell, so the shell has to be
-                 whole first. It is not: while the splash is up the web shell is still
-                 in its boot layout (`html{display:grid}`), its body shrinks to the
-                 content width and the interface shows as a narrow column. Wait for it
-                 to fill the window; if it will not, keep the plate opaque and let the
-                 hard cut at cleanup do the job — never uncover a half-built shell. */
-              revealWhenHealthy(
-                () => {
-                  revealApp()
-                  field.setAttribute('data-on', 'false')
-                  after(TIMING.fieldOutMs, flyAway)
-                },
-                () => {
-                  report('reveal-skipped', { reason: 'shell narrower than the window' })
-                  field.setAttribute('data-on', 'false')
-                  after(TIMING.fieldOutMs, flyAway)
-                },
-              )
-            })
-          }
+          if (fieldName !== null) after(TIMING.fieldHoldMs, exit)
         })
       })
     }
