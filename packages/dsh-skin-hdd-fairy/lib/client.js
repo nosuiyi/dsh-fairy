@@ -528,8 +528,12 @@ window.__ModuleLoader__.load({
          what remains once the backdrop has opened. */
       '[data-hdd-backdrop][data-reveal="mask"] {',
       '  --hdd-reveal: 0%;',
-      '  mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));',
-      '  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));',
+      /* Hard edge on purpose: with a 14% band the centre was already see-through at
+         rest, so the curtain showed a small hole before it ever opened. A soft edge
+         would need the band to sit *below* the start value, which gradient stops do not
+         reliably accept. */
+      '  mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 var(--hdd-reveal));',
+      '  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 var(--hdd-reveal));',
       '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
       '}',
       '[data-hdd-backdrop][data-reveal="mask"][data-on="false"] { --hdd-reveal: 150%; }',

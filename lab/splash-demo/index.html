@@ -39,8 +39,8 @@
   }
   [data-hdd-backdrop][data-reveal="mask"] {
     --hdd-reveal: 0%;
-    mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));
-    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 calc(var(--hdd-reveal) + 14%));
+    mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 var(--hdd-reveal));
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hdd-reveal), #000 var(--hdd-reveal));
     transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;
   }
   [data-hdd-backdrop][data-reveal="mask"][data-on="false"] { --hdd-reveal: 150%; }
@@ -192,7 +192,24 @@
     if (LOOP) setTimeout(start, 7000)
   }
   let pending = 2
-  const ready = () => { pending -= 1; if (pending === 0) setTimeout(start, 300) }
+  const ready = () => {
+    pending -= 1
+    if (pending !== 0) return
+    /* ?freeze=1 renders the opening frame and stops: the honest way to check whether
+       the curtain already has a hole before anything opened. */
+    if (q.get('freeze') === '1') {
+      root.innerHTML = ''
+      const frozen = document.createElement('div')
+      frozen.setAttribute('data-hdd-backdrop', 'true')
+      frozen.setAttribute('data-reveal', 'mask')
+      frozen.setAttribute('data-on', 'true')
+      frozen.style.backgroundImage = 'url("' + BACKDROP + '")'
+      root.appendChild(frozen)
+      document.title = 'DEMO|freeze|reveal=' + getComputedStyle(frozen).getPropertyValue('--hdd-reveal').trim()
+      return
+    }
+    setTimeout(start, 300)
+  }
   for (const url of [BACKDROP, PLATE]) {
     const image = new Image()
     image.onload = ready
