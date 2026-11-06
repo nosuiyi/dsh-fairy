@@ -229,15 +229,20 @@ export function pickCue(cues, kind, previous, random = Math.random) {
 }
 
 /**
- * Find the launch backdrop in the asset root.
- * @param root - absolute asset root.
- * @returns the relative file name, or null when the user supplied none.
+ * Folder that holds the launch media (clip + still backdrop).
+ *
+ * They live in a subfolder because they are one thing — "what plays before the shell
+ * appears" — while the plate, the greetings and the cues are separate concerns. A file
+ * at the asset root still counts, so a folder made before this convention keeps working.
  */
-export async function readBackdrop(root) {
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
-  for (const extension of BACKDROP_EXTENSIONS) {
+export const SPLASH_DIR = 'splash'
+
+/** First file in `directory` whose stem and extension match, or null. */
+async function findStemFile(directory, stem, extensions) {
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => [])
+  for (const extension of extensions) {
     const match = entries.find(
-      (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === 'boot'
+      (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === stem
         && extname(entry.name).toLowerCase() === extension,
     )
     if (match !== undefined) return match.name
@@ -246,26 +251,34 @@ export async function readBackdrop(root) {
 }
 
 /**
- * Find the drawn highlight plate shown after the animation is cut.
+ * Find the launch backdrop.
+ *
+ * Looked up in `splash/` first, then the asset root (older layouts). The returned path is
+ * relative to the asset root, so a subfolder file keeps its folder in `/hdd/asset`.
+ * @param root - absolute asset root.
+ * @returns the relative file name, or null when the user supplied none.
+ */
+export async function readBackdrop(root) {
+  const inFolder = await findStemFile(join(root, SPLASH_DIR), 'boot', BACKDROP_EXTENSIONS)
+  if (inFolder !== null) return `${SPLASH_DIR}/${inFolder}`
+  return findStemFile(root, 'boot', BACKDROP_EXTENSIONS)
+}
+
+/**
+ * Find the drawn highlight plate (the emblem's background art).
  * @param root - absolute asset root.
  * @returns the relative file name, or null.
  */
 export async function readField(root) {
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
   for (const stem of FIELD_STEMS) {
-    for (const extension of BACKDROP_EXTENSIONS) {
-      const match = entries.find(
-        (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === stem
-          && extname(entry.name).toLowerCase() === extension,
-      )
-      if (match !== undefined) return match.name
-    }
+    const hit = await findStemFile(root, stem, BACKDROP_EXTENSIONS)
+    if (hit !== null) return hit
   }
   return null
 }
 
 /**
- * Find the launch animation in the asset root.
+ * Find the launch animation.
  *
  * The clip is user-supplied and never shipped, so its presence decides the splash
  * shape: with a clip the splash plays it and then places the emblem over its last
@@ -274,15 +287,9 @@ export async function readField(root) {
  * @returns the relative file name, or null.
  */
 export async function readVideo(root) {
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
-  for (const extension of VIDEO_EXTENSIONS) {
-    const match = entries.find(
-      (entry) => entry.isFile() && entry.name.slice(0, entry.name.length - extname(entry.name).length) === 'boot'
-        && extname(entry.name).toLowerCase() === extension,
-    )
-    if (match !== undefined) return match.name
-  }
-  return null
+  const inFolder = await findStemFile(join(root, SPLASH_DIR), 'boot', VIDEO_EXTENSIONS)
+  if (inFolder !== null) return `${SPLASH_DIR}/${inFolder}`
+  return findStemFile(root, 'boot', VIDEO_EXTENSIONS)
 }
 
 /**

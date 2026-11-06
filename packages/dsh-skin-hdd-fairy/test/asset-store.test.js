@@ -116,6 +116,40 @@ test('inventory reports an absent directory without throwing', async () => {  co
   assert.deepEqual(inventory.cues, { thinking: [], done: [], failed: [] })
 })
 
+test('launch media is read from splash/ first, and the root still counts', async () => {
+  const root = await withAssets(async (dir) => {
+    await mkdir(join(dir, 'splash'), { recursive: true })
+    await writeFile(join(dir, 'splash', 'boot.mp4'), 'x')
+    await writeFile(join(dir, 'splash', 'boot.png'), 'x')
+    /* old layout: a root-level clip and backdrop must still be found when splash/ has
+       nothing of that kind */
+    await writeFile(join(dir, 'legacy-dir-test.txt'), 'x')
+    await writeFile(join(dir, 'boot-field.png'), 'x')
+  })
+  try {
+    const inventory = await readInventory(root)
+    assert.equal(inventory.video, 'splash/boot.mp4')
+    assert.equal(inventory.backdrop, 'splash/boot.png')
+    /* the plate stays in the root by convention */
+    assert.equal(inventory.field, 'boot-field.png')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('inventory falls back to a root-level clip when splash/ is empty', async () => {
+  const root = await withAssets(async (dir) => {
+    await mkdir(join(dir, 'splash'), { recursive: true })
+    await writeFile(join(dir, 'boot.webm'), 'x')
+  })
+  try {
+    const inventory = await readInventory(root)
+    assert.equal(inventory.video, 'boot.webm')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test('inventory finds a backdrop and reports bucket counts', async () => {
   const root = await withAssets(async (dir) => {
     await mkdir(join(dir, 'greeting'), { recursive: true })

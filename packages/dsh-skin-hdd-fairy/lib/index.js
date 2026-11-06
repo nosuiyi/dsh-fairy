@@ -62,8 +62,8 @@ const assetRoot = resolveAssetRoot
 
 /** What may be imported, where it lands, and how large it may be. */
 const ASSET_KINDS = {
-  video: { dir: '', stem: 'boot', ext: ['.mp4', '.webm'], max: 96 * 1024 * 1024 },
-  backdrop: { dir: '', stem: 'boot', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
+  video: { dir: 'splash', stem: 'boot', ext: ['.mp4', '.webm'], max: 96 * 1024 * 1024 },
+  backdrop: { dir: 'splash', stem: 'boot', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
   field: { dir: '', stem: 'boot-field', ext: ['.png', '.jpg', '.jpeg', '.webp'], max: 16 * 1024 * 1024 },
   greeting: { dir: 'greeting', ext: ['.m4a', '.mp3', '.ogg', '.opus', '.wav'], max: 8 * 1024 * 1024 },
   cue: { dir: 'cue', ext: ['.m4a', '.mp3', '.ogg', '.opus', '.wav'], max: 4 * 1024 * 1024 },
@@ -184,6 +184,11 @@ async function resolveTarget(kindName, extension, bucket, cue, original) {
     /* The highlight plate was once imported as `field.<ext>`; replacing it must clear
        that older name too, or the reader would keep finding the stale file first. */
     if (kindName === 'field') await dropSiblings(base, 'field', name, spec.ext)
+    /* Launch media moved into `splash/`; anything of the same kind left at the asset
+       root is the old layout and would otherwise sit there forever, invisible. */
+    if (kindName === 'video' || kindName === 'backdrop') {
+      await dropSiblings(assetRoot(), spec.stem, null, spec.ext)
+    }
   }
   return { dir: base, name, spec }
 }
@@ -538,6 +543,13 @@ export function apply(ctx) {
     void mkdir(join(root, 'greeting', bucket.id), { recursive: true }).catch(() => {})
   }
   void mkdir(join(root, 'cue'), { recursive: true }).catch(() => {})
+  /* Launch media lives together in `splash/`; the plate stays in the root beside the
+     greeting and cue folders. Created up front so the layout is visible before anything
+     has been imported. */
+  void mkdir(join(root, 'splash'), { recursive: true }).catch(() => {})
+  for (const kind of ['thinking', 'done', 'failed']) {
+    void mkdir(join(root, 'cue', kind), { recursive: true }).catch(() => {})
+  }
 
   /* The media layer: inventory, byte stream, greeting pick and the cue feed. */
   installCueFeed(ctx, root)

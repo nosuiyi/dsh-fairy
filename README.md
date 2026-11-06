@@ -125,12 +125,15 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 
 ```
 assets/
-  boot.mp4 | boot.webm                                   开屏动画（可选）
-  boot.png | .jpg | .webp                                开屏背景图（可选）
-  boot-field.png                                              徽记背景图（可选）
-  greeting/<dawn|morning|noon|afternoon|evening|night>/*  问候语音，按文件夹分档，文件名随意
-  cue/<thinking|done|failed>/*                                回合提示音，按种类分文件夹
+  splash/                                                  开屏素材（开场动画与背景图）
+    boot.mp4 | boot.webm                                   开屏动画（可选）
+    boot.png | .jpg | .jpeg | .webp                        开屏背景图（可选）
+  boot-field.png                                           徽记背景图（可选；旧的 field.png 也认）
+  greeting/<dawn|morning|noon|afternoon|evening|night>/*   问候语音，按文件夹分档，文件名随意
+  cue/<thinking|done|failed>/*                             回合提示音，按种类分文件夹
 ```
+
+> 开屏素材放在 `splash/` 子文件夹里；以前直接放在 `assets/` 根目录的 `boot.*` **仍然有效**（读取时先找 `splash/`，再退回根目录）。`boot-field.png`（徽记背景图）按约定留在根目录。
 
 最省事的做法是**不碰路径**：设置 → **HDD Fairy 素材** 里直接导入，会自动落进对应档位。
 文件名、格式与时长建议见 [`docs/asset-convention.md`](docs/asset-convention.md)。

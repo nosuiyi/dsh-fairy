@@ -167,9 +167,10 @@ dsh plugin --profile desktop add <本仓库>/packages/dsh-skin-hdd-fairy
 
 ```
 assets/
-  boot.mp4            开屏动画（.mp4 / .webm，可选）
-  boot.png            开屏背景图（.png/.jpg/.jpeg/.webp，可选）
-  boot-field.png      徽记背景图（可选；旧的 `field.png` 也认）
+  splash/             ← 开屏素材（开场动画 + 背景图）都放这里
+    boot.mp4          开屏动画（.mp4 / .webm，可选）
+    boot.png          开屏背景图（.png/.jpg/.jpeg/.webp，可选）
+  boot-field.png      徽记背景图（可选；旧的 `field.png` 也认，留在根目录）
   greeting/           ← 六个档位文件夹，往里丢就是，**不用改名**
     dawn/             深夜 0–5
     morning/          早上 5–11
@@ -230,11 +231,11 @@ greeting/noon/吃饭啦.m4a         → 中午
 
 | 项 | 语义 | 允许的扩展名 | 上限 |
 |---|---|---|---|
-| 开屏动画 | **替换**（只删同 stem 的**视频**兄弟，背景图不受影响） | `.mp4` `.webm` | 96 MB |
-| 开屏背景图 | **替换** | `.png` `.jpg` `.jpeg` `.webp` | 16 MB |
-| 徽记背景图 | **替换** | 同上 | 16 MB |
+| 开屏动画 | **替换**，落进 `splash/`（连同根目录旧位置的同名文件一起清掉；背景图不受影响） | `.mp4` `.webm` | 96 MB |
+| 开屏背景图 | **替换**，落进 `splash/` | `.png` `.jpg` `.jpeg` `.webp` | 16 MB |
+| 徽记背景图 | **替换**，留在根目录 | 同上 | 16 MB |
 | 问候语音 | **添加**（保留原文件名，落进 `greeting/<档位>/`；重名自动加 `-2`） | `.m4a` `.mp3` `.ogg` `.opus` `.wav` | 8 MB |
-| 回合提示音 | **覆盖同名** | 同上 | 4 MB |
+| 回合提示音 | **添加**，落进 `cue/<种类>/`（同名自动加 `-2`） | 同上 | 4 MB |
 
 Host 侧三个路由：
 
