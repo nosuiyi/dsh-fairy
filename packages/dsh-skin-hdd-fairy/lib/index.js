@@ -40,6 +40,17 @@ const LOG = join(
 )
 
 /**
+ * Rotate the log once it passes this size.
+ *
+ * This constant was *referenced* long before it was defined: every write through the
+ * `/hdd/report` route threw a `ReferenceError` inside the route's `catch`, so the route
+ * answered 204 while writing nothing — the log looked healthy and was permanently mute
+ * about anything the client said. Two days of "the client reports nothing" came from
+ * this one missing line.
+ */
+const MAX_LOG_BYTES = 2 * 1024 * 1024
+
+/**
  * The asset root. `asset-store.js` owns the convention (env override, DSH home
  * fallback); this module only needs a short name for it, so the two cannot drift.
  *

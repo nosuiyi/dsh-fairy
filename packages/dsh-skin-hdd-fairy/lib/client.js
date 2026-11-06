@@ -168,7 +168,7 @@ window.__ModuleLoader__.load({
      * Not a latency knob to shave: an endpoint that was idle still has to wake, and a
      * source scheduled 30ms out loses its opening syllable while the device comes up.
      */
-    const PLAY_LEAD_S = 0.3
+    const PLAY_LEAD_S = 0.6
 
     /**
      * TEMP(cue probe): put the playback facts in the window title.
@@ -206,6 +206,14 @@ window.__ModuleLoader__.load({
         parts.push(`GET=${got.status}`)
       } catch {
         parts.push('GET=err')
+      }
+      /* The reporting call itself: 204 means the new Host handler accepted it, 200
+         means an older handler answered and the client is still mute. */
+      try {
+        const wrote = await fetch('/hdd/report?event=channel-probe&detail=null')
+        parts.push(`REPGET=${wrote.status}`)
+      } catch {
+        parts.push('REPGET=err')
       }
       try {
         const posted = await fetch('/hdd/report', {
@@ -1132,7 +1140,9 @@ window.__ModuleLoader__.load({
       if (greeting.keepAlive !== null || context === null) return
       try {
         const gain = context.createGain()
-        gain.gain.value = 0
+        /* Not exactly zero: a mixer may treat an all-zero stream as idle and let the
+           endpoint sleep again. -80 dB is inaudible and still counts as signal. */
+        gain.gain.value = 0.0001
         const oscillator = context.createOscillator()
         oscillator.frequency.value = 220
         oscillator.connect(gain)
@@ -2379,7 +2389,16 @@ window.__ModuleLoader__.load({
         }
         cueSource = node
         node.start(running.currentTime + PLAY_LEAD_S)
-        probeCue(`buf|ctx=${running.state}|lead=${PLAY_LEAD_S}|dur=${buffer.duration.toFixed(2)}|setup=${Date.now() - startedAt}ms|keep=${greeting.keepAlive === null ? 0 : 1}`)
+        /* A durable record of what actually happened, now that the report channel
+           writes again: path, context, lead, clip length and setup time. */
+        report('cue-play', {
+          via: 'buffer',
+          ctx: running.state,
+          lead: PLAY_LEAD_S,
+          dur: Number(buffer.duration.toFixed(2)),
+          setupMs: Date.now() - startedAt,
+          keep: greeting.keepAlive !== null,
+        })
         return true
       }
 
