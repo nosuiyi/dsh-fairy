@@ -146,8 +146,6 @@ window.__ModuleLoader__.load({
        * (`animEndS`): the user decides where their own animation stops.
        */
       videoEndS: 0,
-      /** How long the highlight plate stays before it starts fading out. */
-      fieldHoldMs: 1700,
       /** Plate fade-out duration; the flight starts when it finishes. */
       fieldOutMs: 1150,
       /**
@@ -158,20 +156,8 @@ window.__ModuleLoader__.load({
        */
       revealBudgetMs: 4000,
       revealBudgetNoVideoMs: 6000,
-      /** How long the still backdrop holds as a loading cover before handing over. */
-      coverMinMs: 900,
-      /** Cover fade-out; the emblem and the plate start as it leaves. */
-      coverSwapMs: 620,
-      /**
-       * Head start for the plate's radial mask before the emblem pops in.
-       *
-       * With both on the same tick the eye reads "emblem first, plate follows"; the
-       * recording showed exactly that. A ~quarter second makes the ring visibly the
-       * thing that brings the emblem out.
-       */
-      emblemAfterRingMs: 240,
-      /** Never wait longer than this for the plate image before showing the scene. */
-      coverMaxMs: 2000,
+      /** How long the backdrop curtain stays closed before it opens from the centre. */
+      coverMinMs: 1500,
       gather: 430,
       fly: 1400,
       fadeOut: 520,
@@ -547,9 +533,9 @@ window.__ModuleLoader__.load({
       '  transition: --hdd-reveal 620ms ease-out, opacity 620ms ease-out;',
       '}',
       '[data-hdd-backdrop][data-reveal="mask"][data-on="false"] { --hdd-reveal: 150%; }',
-      /* As a cover the backdrop should be there almost immediately: the window has just
-         appeared and a long fade reads as "black screen, then the image". */
-      '[data-hdd-backdrop][data-cover="true"] { transition: opacity 320ms ease-out, --hdd-reveal 620ms ease-out; }',
+      /* The curtain must not fade as a whole: it is the *hole* that opens, so the plate
+         underneath is uncovered from the centre instead of the whole layer dimming. */
+      '[data-hdd-backdrop][data-curtain="true"][data-on="false"] { opacity: 1; }',
       '[data-hdd-holder] {',
       '  position: relative;',
       '  width: min(300px, 42vw);',
@@ -2276,17 +2262,21 @@ window.__ModuleLoader__.load({
             paintStop = undefined
           }
         } else if (inventory.backdrop) {
-          /* The backdrop is the canvas in both `auto` (when there is no clip) and
-             `novideo` (when the clip is deliberately skipped).
+          /* The backdrop is a *curtain* in both `auto` (no clip) and `novideo`.
            *
-           * It is a *cover*, not the scene: it holds the frame while the drawn plate
-           * decodes, then fades away as the emblem and the plate fade in. A 936 KB PNG
-           * is not on screen 30ms after being referenced, and without a cover that gap
-           * shows as an empty dark rectangle. */
+           * It sits ABOVE the plate and stays fully opaque for `coverMinMs`; then it
+           * opens from the centre, uncovering the plate underneath at exactly the moment
+           * the emblem pops and the greeting starts. Appended last on purpose: both layers
+           * are absolutely positioned, so paint order is the z-order. */
+          if (typeof inventory.field === 'string' && inventory.field !== '') {
+            field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(inventory.field)}")`
+            field.setAttribute('data-on', 'true')
+            root.appendChild(field)
+          }
           backdrop.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(inventory.backdrop)}")`
           backdrop.setAttribute('data-on', 'true')
           backdrop.setAttribute('data-reveal', 'mask')
-          backdrop.setAttribute('data-cover', 'true')
+          backdrop.setAttribute('data-curtain', 'true')
           root.appendChild(backdrop)
           coverActive = true
         } else {
@@ -2306,31 +2296,6 @@ window.__ModuleLoader__.load({
            callback — no emblem, no timeline, and the splash sat until the 15s
            backstop tore it down (a hint with no mark, then a long dark wait). */
         const fieldName = inventory !== null && typeof inventory.field === 'string' ? inventory.field : null
-        /* The plate is a background image on a div, so "is it there yet?" is not a DOM
-           event. Preloading it through an Image gives a real load/error callback; the
-           cover below waits for it instead of revealing an empty plate. */
-        const plateReady = fieldName === null
-          ? Promise.resolve(false)
-          : new Promise((resolve) => {
-            const probe = new Image()
-            const finish = (ok) => {
-              probe.onload = null
-              probe.onerror = null
-              resolve(ok)
-            }
-            probe.onload = () => {
-              /* `load` means the bytes arrived; `decode()` means the bitmap is ready to
-                 paint. Without the second step the mask started expanding while the
-                 plate was still being decoded, so the ring visibly lagged the emblem. */
-              if (typeof probe.decode === 'function') probe.decode().then(() => finish(true), () => finish(true))
-              else finish(true)
-            }
-            probe.onerror = () => finish(false)
-            probe.src = `/hdd/asset?path=${encodeURIComponent(fieldName)}`
-            after(TIMING.coverMaxMs, () => finish(false))
-          })
-        root.appendChild(holder)
-        beginEmblem()
 
         /**
          * The single way out of the splash.
@@ -2375,50 +2340,26 @@ window.__ModuleLoader__.load({
         }
 
         /**
-         * Put the plate (and then the emblem) on screen and start the timeline.
+         * Start the emblem, then the greeting/stay/exit timeline.
          *
-         * On the cover route the order matters: the radial mask gets a head start, and
-         * the emblem pops *into* an already-opening ring. Doing both on the same tick
-         * read as "the emblem brought the plate"; a ~240ms lead makes it read as "the
-         * ring brought the emblem", which is the effect the recording asked for.
+         * The plate is *not* placed here: on the curtain route it is already mounted
+         * underneath the backdrop (so the opening uncovers a real layer), and the
+         * non-curtain routes mount it inline just below.
          */
-        const mountScene = () => {
+        const startEmblem = () => {
           if (disposed) return
-          const startEmblem = () => {
-            if (disposed) return
-            report('emblem-start', { at: Math.round(splashNow()), ringLead: TIMING.emblemAfterRingMs })
-            root.appendChild(holder)
-            beginEmblem()
-            startTimeline()
-          }
-          if (fieldName !== null) {
-            field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
-            root.appendChild(field)
-            after(20, () => {
-              if (disposed) return
-              report('plate-start', { at: Math.round(splashNow()) })
-              field.setAttribute('data-on', 'true')
-            })
-            /* Does the radial mask actually animate? A registered custom property is
-               supposed to, but a silent snap would look exactly like "the ring arrives
-               late", so measure the transition end instead of assuming. */
-            if (coverActive) {
-              const onEnd = (event) => {
-                if (event.target !== field) return
-                field.removeEventListener('transitionend', onEnd)
-                report('plate-transition', {
-                  prop: event.propertyName,
-                  at: Math.round(splashNow()),
-                })
-              }
-              field.addEventListener('transitionend', onEnd)
-            }
-          }
-          if (coverActive && fieldName !== null) {
-            after(TIMING.emblemAfterRingMs, startEmblem)
-            return
-          }
-          startEmblem()
+          report('emblem-start', { at: Math.round(splashNow()) })
+          root.appendChild(holder)
+          beginEmblem()
+          startTimeline()
+        }
+
+        /** Plate placement for the routes that have no curtain over them. */
+        const placePlateInline = () => {
+          if (fieldName === null) return
+          field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
+          root.appendChild(field)
+          after(30, () => field.setAttribute('data-on', 'true'))
         }
 
         const startTimeline = () => {
@@ -2434,38 +2375,31 @@ window.__ModuleLoader__.load({
             })
             after(TIMING.maxHold, exit)
             void spoken
-            /* With a highlight plate the flight follows the plate's fade, not the end
-               of the greeting: the image is what leaves, the emblem is what stays. */
-            if (fieldName !== null) after(TIMING.fieldHoldMs, exit)
+            /* The plate now stays for the whole greeting: it used to start leaving
+               a plate-hold timer after the emblem, which cut the greeting short once the
+               curtain pushed everything ~0.6s later. The exit is greeting-end + hold,
+               with `maxHold` as the cap. */
           })
         }
 
         if (coverActive) {
-          /* Cover sequence: the backdrop holds the frame for at least `coverMinMs` (its
-             own fade-in is 620ms — switching sooner reads as a flash), and until the
-             plate has actually decoded. Then the cover fades out underneath the emblem
-             and the plate fading in. */
-          const coveringSince = typeof performance === 'object' ? performance.now() : Date.now()
-          void plateReady.then((plateLoaded) => {
+          /* Curtain route: the backdrop is already on top of the plate and fully opaque.
+             After `coverMinMs` it opens from the centre, and that same tick starts the
+             emblem and the greeting — the plate is uncovered and the mark arrives in one
+             gesture instead of two timed phases. */
+          after(TIMING.coverMinMs, () => {
             if (disposed) return
-            const waited = (typeof performance === 'object' ? performance.now() : Date.now()) - coveringSince
-            const wait = Math.max(0, TIMING.coverMinMs - waited)
-            after(wait, () => {
-              if (disposed) return
-              report('cover-handoff', { plateLoaded, waitedMs: Math.round(waited) })
-              backdrop.setAttribute('data-on', 'false')
-              /* The plate/emblem start while the cover is still leaving: one cross-fade
-                 instead of "cover gone, then a dark beat, then the scene". */
-              after(TIMING.coverSwapMs, mountScene)
-            })
+            report('curtain-open', { at: Math.round(splashNow()) })
+            backdrop.setAttribute('data-on', 'false')
+            startEmblem()
           })
           return
         }
 
-        mountScene()
+        placePlateInline()
+        startEmblem()
       })
     }
-
     /* ------------------------------------------------------------------ cues */
 
     function installCues(ctx) {
