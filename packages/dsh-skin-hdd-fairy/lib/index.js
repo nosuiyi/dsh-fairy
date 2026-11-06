@@ -533,7 +533,35 @@ export function apply(ctx) {
         kind: 'exact',
         path: '/hdd/report',
         handler: async (req, res) => {
+          const appendLine = async (line) => {
+            const text = `${new Date().toISOString()} ${line.replace(/\s+/g, ' ').slice(0, 2000)}\n`
+            await mkdir(dirname(LOG), { recursive: true })
+            const existing = await readFile(LOG, 'utf8').catch(() => '')
+            /* Rotate rather than grow without bound. */
+            if (existing.length > MAX_LOG_BYTES) {
+              await appendFile(LOG, `${new Date().toISOString()} {"event":"log-reset"}\n${text}`, 'utf8')
+              return
+            }
+            await appendFile(LOG, text, 'utf8')
+          }
           if (req.method === 'GET') {
+            const url = new URL(req.url || '/', 'http://127.0.0.1')
+            /* GET doubles as the *write* channel: DSH 0.2.2 answers a POST with 204
+               without ever handing the body to the route, so a client that reports by
+               POST is silently mute (that is why the Host log showed no client lines
+               at all after the update). A query string survives where a body does not. */
+            const event = url.searchParams.get('event')
+            if (event !== null) {
+              const detail = url.searchParams.get('detail') ?? 'null'
+              try {
+                await appendLine(JSON.stringify({ event, detail: JSON.parse(detail), via: 'get' }))
+              } catch {
+                /* Diagnostics are best-effort by definition. */
+              }
+              res.writeHead(204, { 'cache-control': 'no-store' })
+              res.end()
+              return
+            }
             const body = await readFile(LOG, 'utf8').catch(() => '')
             const payload = Buffer.from(body.slice(-64 * 1024), 'utf8')
             res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
@@ -541,15 +569,8 @@ export function apply(ctx) {
             return
           }
           const raw = await readBody(req)
-          const line = `${new Date().toISOString()} ${raw.replace(/\s+/g, ' ').slice(0, 2000)}\n`
           try {
-            await mkdir(dirname(LOG), { recursive: true })
-            const existing = await readFile(LOG, 'utf8').catch(() => '')
-            /* Rotate rather than grow without bound. */
-            await appendFile(LOG, existing.length > MAX_LOG_BYTES ? '' : line, 'utf8')
-            if (existing.length > MAX_LOG_BYTES) {
-              await appendFile(LOG, `${new Date().toISOString()} {"event":"log-reset"}\n${line}`, 'utf8')
-            }
+            await appendLine(raw)
           } catch {
             /* Diagnostics are best-effort by definition. */
           }

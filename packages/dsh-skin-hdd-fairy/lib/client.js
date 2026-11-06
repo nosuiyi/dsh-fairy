@@ -166,10 +166,67 @@ window.__ModuleLoader__.load({
      * How far ahead every clip is scheduled on the audio clock.
      *
      * Not a latency knob to shave: an endpoint that was idle still has to wake, and a
-     * source that starts 30ms out loses its opening syllable while the device comes up.
-     * 120ms is short enough to feel immediate and long enough to cover the wake.
+     * source scheduled 30ms out loses its opening syllable while the device comes up.
      */
-    const PLAY_LEAD_S = 0.12
+    const PLAY_LEAD_S = 0.3
+
+    /**
+     * TEMP(cue probe): put the playback facts in the window title.
+     *
+     * The title is the only surface that reaches outside the renderer without a working
+     * report channel; removed as soon as the "swallowed onset" question is settled.
+     */
+    let probeLast = 'boot'
+    let probeChannels = ''
+
+    function writeProbeTitle() {
+      try {
+        document.title = `HDD-CUE|${probeLast}|ch:${probeChannels}`
+      } catch {
+        /* diagnostics only */
+      }
+    }
+
+    function probeCue(text) {
+      probeLast = text
+      writeProbeTitle()
+    }
+
+    /**
+     * TEMP(channel probe): which HTTP methods still get an answer after the update.
+     *
+     * `/hdd/report` accepts GET (returns the log tail) and POST (appends a line). The
+     * Host log has shown no client lines at all since the update, so the question is
+     * whether the renderer's POST reaches the route at all.
+     */
+    async function probeHttpChannels() {
+      const parts = []
+      try {
+        const got = await fetch('/hdd/report')
+        parts.push(`GET=${got.status}`)
+      } catch {
+        parts.push('GET=err')
+      }
+      try {
+        const posted = await fetch('/hdd/report', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ event: 'channel-probe', detail: null, perf: -1, visibility: 'probe' }),
+        })
+        parts.push(`POST=${posted.status}`)
+      } catch {
+        parts.push('POST=err')
+      }
+      try {
+        const bin = await fetch('/hdd/asset?path=cue/thinking.m4a')
+        const bytes = bin.ok ? (await bin.arrayBuffer()).byteLength : -1
+        parts.push(`ASSET=${bin.status}/${bytes}`)
+      } catch {
+        parts.push('ASSET=err')
+      }
+      probeChannels = parts.join(',')
+      writeProbeTitle()
+    }
 
     /**
      * Fire-and-forget diagnostics.
@@ -180,22 +237,18 @@ window.__ModuleLoader__.load({
      * outside.
      */
     function report(event, detail) {
-      const body = JSON.stringify({
-        event,
-        detail: detail === undefined ? null : detail,
-        perf: typeof performance === 'object' ? Math.round(performance.now()) : -1,
-        visibility: typeof document === 'object' ? document.visibilityState : '?',
-      })
+      /* GET, not POST. DSH 0.2.2 answers a POST to a plugin route with 204 but never
+         hands the body to the handler, so a POST-based reporter is silently mute — the
+         Host log carried no client lines at all after the update, which made every
+         investigation blind. A query string still arrives intact. */
+      const payload = JSON.stringify(detail === undefined ? null : detail)
+      const query = `?event=${encodeURIComponent(event)}&detail=${encodeURIComponent(payload.slice(0, 1500))}`
       /* On a fresh start the client can run before the Host half has registered
          `/hdd/report`; those first lines (apply, skin-classes, assets) then 404 and
          vanish, which makes a healthy boot look like a silent one. Retry twice. */
       const send = (attempt) => {
         try {
-          void fetch('/hdd/report', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body,
-          }).then((response) => {
+          void fetch(`/hdd/report${query}`).then((response) => {
             if (!response.ok && attempt < 2) window.setTimeout(() => send(attempt + 1), 1200)
           }).catch(() => {})
         } catch {
@@ -2283,10 +2336,13 @@ window.__ModuleLoader__.load({
       const playCueAudio = async (file) => {
         const context = audioContext()
         if (context === null) {
+          probeCue('noCtx')
           return false
         }
+        const startedAt = Date.now()
         const running = await ensureRunning(context)
         if (running === null) {
+          probeCue('noRun')
           return false
         }
         if (cueSource !== null) return true
@@ -2294,12 +2350,14 @@ window.__ModuleLoader__.load({
         if (buffer === undefined) {
           const response = await fetch(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
           if (!response.ok) {
+            probeCue(`net${response.status}`)
             return false
           }
           const bytes = await response.arrayBuffer()
           try {
             buffer = await running.decodeAudioData(bytes.slice(0))
           } catch {
+            probeCue(`dec${bytes.byteLength}`)
             return false
           }
           cueBuffers.set(file, buffer)
@@ -2321,6 +2379,7 @@ window.__ModuleLoader__.load({
         }
         cueSource = node
         node.start(running.currentTime + PLAY_LEAD_S)
+        probeCue(`buf|ctx=${running.state}|lead=${PLAY_LEAD_S}|dur=${buffer.duration.toFixed(2)}|setup=${Date.now() - startedAt}ms|keep=${greeting.keepAlive === null ? 0 : 1}`)
         return true
       }
 
@@ -2328,14 +2387,17 @@ window.__ModuleLoader__.load({
         /* The poller also feeds the status label, so it stays up even when the sounds
            are switched off — the *sound* is what this line gates. */
         if (settings.cues === false) {
+          probeCue('off')
           return
         }
         const inventory = info.value
         if (inventory === null || inventory.cues === undefined) {
+          probeCue('noinv')
           return
         }
         const file = inventory.cues[kind]
         if (file === undefined || file === null) {
+          probeCue(`no${kind}`)
           return
         }
         if (cueSource !== null) return
@@ -2348,6 +2410,7 @@ window.__ModuleLoader__.load({
            a platform where `AudioContext` is unavailable or refuses the clip. */
         void playCueAudio(file).then((scheduled) => {
           if (scheduled || settings.cues === false) return
+          probeCue('elem')
           const element = new Audio(`/hdd/asset?path=${encodeURIComponent(`cue/${file}`)}`)
           element.volume = CUE_VOLUME
           playing = element
@@ -2656,6 +2719,9 @@ window.__ModuleLoader__.load({
         cues = installCues(ctx)
         /* Fresh page = "已就位"; the feed moves it on from there. */
         setWorkerState('ready')
+        /* TEMP(channel probe): one shot per page load; the result rides along in the
+           window title next to the cue facts. */
+        void probeHttpChannels()
 
         /* The manager can turn the whole timeline off; the mark and the cues are
            independent of it, so the skin still identity-marks the sidebar.
