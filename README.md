@@ -129,7 +129,7 @@ assets/
   boot.png | .jpg | .webp                                开屏背景图（可选）
   boot-field.png                                              高光板（可选）
   greeting/<dawn|morning|noon|afternoon|evening|night>/*  问候语音，按文件夹分档，文件名随意
-  cue/{thinking,done,failed}.m4a                         回合提示音
+  cue/<thinking|done|failed>/*                                回合提示音，按种类分文件夹
 ```
 
 最省事的做法是**不碰路径**：设置 → **HDD Fairy 素材** 里直接导入，会自动落进对应档位。

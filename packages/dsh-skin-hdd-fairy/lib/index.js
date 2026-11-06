@@ -169,11 +169,16 @@ async function resolveTarget(kindName, extension, bucket, cue, original) {
     await mkdir(dir, { recursive: true })
     return { dir, name: await uniqueName(dir, original, extension), spec }
   }
+  if (kindName === 'cue') {
+    /* One folder per kind, the user's own file name kept — the same "drop a file in"
+       rule greetings use, so several clips per kind are allowed. */
+    const dir = join(base, cue)
+    await mkdir(dir, { recursive: true })
+    return { dir, name: await uniqueName(dir, original, extension), spec }
+  }
   await mkdir(base, { recursive: true })
   let name
-  if (kindName === 'cue') {
-    name = `${cue}${extension}`
-  } else {
+  {
     name = `${spec.stem}${extension}`
     await dropSiblings(base, spec.stem, name, spec.ext)
     /* The highlight plate was once imported as `field.<ext>`; replacing it must clear
@@ -184,10 +189,12 @@ async function resolveTarget(kindName, extension, bucket, cue, original) {
 }
 
 /** The asset-root-relative path to show the user after an import. */
-function reportedFile(kindName, name, bucket) {
-  const parts = [ASSET_KINDS[kindName].dir, kindName === 'greeting' ? bucket : '', name]
-    .filter((part) => part !== '')
-  return parts.join('/')
+function reportedFile(kindName, name, bucket, cue) {
+  const parts = [ASSET_KINDS[kindName].dir]
+  if (kindName === 'greeting') parts.push(bucket)
+  if (kindName === 'cue') parts.push(cue)
+  parts.push(name)
+  return parts.filter((part) => part !== '').join('/')
 }
 
 /** Collect a request body as bytes, refusing anything past `limit`. */
@@ -661,7 +668,7 @@ export function apply(ctx) {
               ok: true,
             }))
             json(res, 200, {
-              file: reportedFile(kindName, target.name, bucket),
+              file: reportedFile(kindName, target.name, bucket, cue),
               bytes: bytes.length,
             })
           } catch (error) {
@@ -790,7 +797,7 @@ export function apply(ctx) {
               ok: true,
             }))
             json(res, 200, {
-              file: reportedFile(kindName, target.name, bucket),
+              file: reportedFile(kindName, target.name, bucket, cue),
               bytes: bytes.length,
             })
           } catch (error) {
@@ -833,13 +840,17 @@ export function apply(ctx) {
             json(res, 400, { error: `unknown kind "${kindName}"` })
             return
           }
-          /* Greetings live one folder per bucket, so "open folder" follows the bucket
-             currently selected in the panel. */
+          /* Greetings live one folder per bucket, and cue clips one folder per kind, so
+             "open folder" follows whatever is selected in the panel. */
           const bucketParam = url.searchParams.get('bucket') ?? ''
           const bucket = GREETING_BUCKETS.includes(bucketParam) ? bucketParam : GREETING_BUCKETS[1]
+          const cueParam = url.searchParams.get('cue') ?? ''
+          const cueKind = CUE_KINDS.includes(cueParam) ? cueParam : CUE_KINDS[0]
           const dir = kindName === 'greeting'
             ? join(assetRoot(), spec.dir, bucket)
-            : join(assetRoot(), spec.dir)
+            : kindName === 'cue'
+              ? join(assetRoot(), spec.dir, cueKind)
+              : join(assetRoot(), spec.dir)
           await mkdir(dir, { recursive: true })
           let target = dir
           let isFile = false

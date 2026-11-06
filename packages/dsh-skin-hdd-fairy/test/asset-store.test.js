@@ -14,6 +14,7 @@ import test from 'node:test'
 import {
   bucketById,
   bucketForHour,
+  pickCue,
   readField,
   readHour,
   pickGreeting,
@@ -79,7 +80,7 @@ test('reads clips by bucket and cue kind', async () => {
     assert.deepEqual(greetings.noon, ['noon-1.m4a'])
     assert.deepEqual(greetings.afternoon, [])
     const cues = await readCues(join(root, 'cue'))
-    assert.deepEqual(cues, { thinking: 'thinking.m4a', done: 'done.m4a', failed: null })
+    assert.deepEqual(cues, { thinking: ['thinking.m4a'], done: ['done.m4a'], failed: [] })
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -112,7 +113,7 @@ test('inventory reports an absent directory without throwing', async () => {  co
   assert.equal(inventory.exists, false)
   assert.equal(inventory.backdrop, null)
   assert.equal(inventory.buckets.length, 6)
-  assert.deepEqual(inventory.cues, { thinking: null, done: null, failed: null })
+  assert.deepEqual(inventory.cues, { thinking: [], done: [], failed: [] })
 })
 
 test('inventory finds a backdrop and reports bucket counts', async () => {
@@ -140,6 +141,32 @@ test('the highlight plate is found as boot-field.*, and the older field.* still 
     await writeFile(join(root, 'boot-field.png'), 'x')
     /* The canonical name wins once it exists, whatever the extension order. */
     assert.equal(await readField(root), 'boot-field.png')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('cue clips are one folder per kind, several per kind, and picked without repeating', async () => {
+  const root = await withAssets(async (dir) => {
+    await mkdir(join(dir, 'cue', 'thinking'), { recursive: true })
+    await mkdir(join(dir, 'cue', 'done'), { recursive: true })
+    await writeFile(join(dir, 'cue', 'thinking', 'a.m4a'), 'x')
+    await writeFile(join(dir, 'cue', 'thinking', 'b.m4a'), 'x')
+    await writeFile(join(dir, 'cue', 'done', 'ok.m4a'), 'x')
+    /* legacy flat file, picked up alongside the folder layout */
+    await writeFile(join(dir, 'cue', 'failed.m4a'), 'x')
+  })
+  try {
+    const cues = await readCues(join(root, 'cue'))
+    assert.deepEqual(cues.thinking, ['thinking/a.m4a', 'thinking/b.m4a'])
+    assert.deepEqual(cues.done, ['done/ok.m4a'])
+    assert.deepEqual(cues.failed, ['failed.m4a'])
+
+    /* Random, but never the clip that just played. */
+    assert.equal(pickCue(cues, 'thinking', undefined, () => 0).file, 'thinking/a.m4a')
+    assert.equal(pickCue(cues, 'thinking', 'thinking/a.m4a', () => 0).file, 'thinking/b.m4a')
+    /* No cross-kind fallback: an empty kind stays silent instead of borrowing a clip. */
+    assert.equal(pickCue({ thinking: [], done: ['done/ok.m4a'], failed: [] }, 'thinking', undefined, () => 0), undefined)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

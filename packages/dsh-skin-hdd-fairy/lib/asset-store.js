@@ -182,18 +182,50 @@ export async function readGreetings(directory) {
 }
 
 /**
- * Read the cue clips.
+ * Read the cue clips, one folder per kind.
+ *
+ * Two layouts are accepted, and they combine — the same rule greetings follow:
+ *
+ *   cue/thinking/x.m4a     one folder per kind — drop files in, nothing to rename
+ *   cue/thinking.m4a       flat file named after the kind (legacy)
+ *
+ * Entries are returned as paths relative to `cue/`, so a clip inside its kind folder
+ * keeps that folder in the `/hdd/asset` URL.
  * @param directory - the `cue/` directory.
- * @returns `{ thinking, done, failed }`, each a file name or null.
+ * @returns one sorted clip list per kind, empty when a kind has none.
  */
 export async function readCues(directory) {
-  const files = await clipsIn(directory)
+  const flat = await clipsIn(directory)
   const cues = {}
   for (const kind of CUE_KINDS) {
-    const match = files.find((name) => name.slice(0, name.length - extname(name).length) === kind)
-    cues[kind] = match ?? null
+    const fromFolder = await clipsIn(join(directory, kind))
+    const legacy = flat.filter((name) => name.slice(0, name.length - extname(name).length) === kind)
+    cues[kind] = [
+      ...fromFolder.map((name) => `${kind}/${name}`),
+      ...legacy,
+    ].sort()
   }
   return cues
+}
+
+/**
+ * Choose one cue clip.
+ *
+ * No cross-kind fallback on purpose: a "thinking" cue that played the "done" clip
+ * would state the opposite of what happened. Avoids repeating the previous pick
+ * when the kind has more than one clip.
+ * @param cues - inventory as {@link readCues} returns it.
+ * @param kind - `thinking` | `done` | `failed`.
+ * @param previous - clip played last time for this kind, if known.
+ * @param random - number source in [0, 1), injected for tests.
+ * @returns `{ kind, file }`, or undefined when that kind has no clip.
+ */
+export function pickCue(cues, kind, previous, random = Math.random) {
+  const pool = cues === null || cues === undefined ? [] : (cues[kind] ?? [])
+  if (pool.length === 0) return undefined
+  const candidates = pool.length > 1 && previous !== undefined ? pool.filter((name) => name !== previous) : pool
+  const chosen = candidates[Math.min(candidates.length - 1, Math.floor(random() * candidates.length))]
+  return { kind, file: chosen }
 }
 
 /**
@@ -262,7 +294,7 @@ export async function readInventory(root) {
   const info = await stat(root).catch(() => undefined)
   const exists = info !== undefined && info.isDirectory()
   const greetings = exists ? await readGreetings(join(root, 'greeting')) : {}
-  const cues = exists ? await readCues(join(root, 'cue')) : { thinking: null, done: null, failed: null }
+  const cues = exists ? await readCues(join(root, 'cue')) : { thinking: [], done: [], failed: [] }
   const backdrop = exists ? await readBackdrop(root) : null
   const video = exists ? await readVideo(root) : null
   const field = exists ? await readField(root) : null

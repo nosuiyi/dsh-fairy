@@ -1726,7 +1726,25 @@ window.__ModuleLoader__.load({
         (total, list) => total + (Array.isArray(list) ? list.length : 0),
         0,
       )
-      const cues = inventory === null ? 0 : Object.values(inventory.cues || {}).filter((file) => typeof file === 'string').length
+      const cues = inventory === null
+        ? 0
+        : Object.values(inventory.cues || {}).reduce(
+          (total, list) => total + (Array.isArray(list) ? list.length : (typeof list === 'string' ? 1 : 0)),
+          0,
+        )
+
+      /* Cue clips are one folder per kind and may be several, so the panel shows the
+         per-kind counts the same way it does for greeting buckets. */
+      const cueBreakdown = () => {
+        const labels = [['thinking', '思考'], ['done', '完成'], ['failed', '失败']]
+        return labels
+          .map(([kind, label]) => {
+            const list = (inventory === null ? {} : inventory.cues || {})[kind]
+            const count = Array.isArray(list) ? list.length : (typeof list === 'string' ? 1 : 0)
+            return `${label} ${count}`
+          })
+          .join(' · ')
+      }
 
       /* Which bucket a greeting belongs to is decided by its file name prefix alone
          (`morning-*.m4a`), so showing the counts per bucket is the only way to see at
@@ -1778,10 +1796,10 @@ window.__ModuleLoader__.load({
           button('add-greeting', '导入…', false, () => { void startBrowse('greeting', '.m4a,.mp3,.ogg,.opus,.wav,audio/*', { bucket }) }),
           button('open-greeting', '打开文件夹', false, () => reveal('greeting', { bucket })),
         ], 'greeting'),
-        row('回合提示音', status === 'missing' ? '素材包未就绪' : `${cues} 条`, [
+        row('回合提示音', status === 'missing' ? '素材包未就绪' : `${cues} 条（${cueBreakdown()}）`, [
           select('cue', cue, setCue, [['thinking', '思考'], ['done', '完成'], ['failed', '失败']]),
-          button('set-cue', '更换…', false, () => { void startBrowse('cue', '.m4a,.mp3,.ogg,.opus,.wav,audio/*', { cue }) }),
-          button('open-cue', '打开文件夹', false, () => reveal('cue')),
+          button('add-cue', '导入…', false, () => { void startBrowse('cue', '.m4a,.mp3,.ogg,.opus,.wav,audio/*', { cue }) }),
+          button('open-cue', '打开文件夹', false, () => reveal('cue', { cue })),
         ], 'cue'),
         h('div', { key: 'actions', style: { display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' } }, [
           button('rescan', busy ? '扫描中…' : '重新扫描', busy, () => load()),
@@ -2332,6 +2350,26 @@ window.__ModuleLoader__.load({
         return true
       }
 
+      /** Clip played last per kind, so several clips for one kind rotate rather than repeat. */
+      const lastCueFile = new Map()
+
+      /**
+       * Pick one clip for a cue kind.
+       *
+       * Mirrors the greeting rule (random, avoid the previous one) but without any
+       * cross-kind fallback: a "thinking" cue must never play the "done" clip.
+       */
+      const pickCueClip = (cues, kind) => {
+        const raw = cues === null || cues === undefined ? undefined : cues[kind]
+        const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? [raw] : [])
+        if (list.length === 0) return null
+        const previous = lastCueFile.get(kind)
+        const pool = list.length > 1 && previous !== undefined ? list.filter((name) => name !== previous) : list
+        const chosen = pool[Math.min(pool.length - 1, Math.floor(Math.random() * pool.length))]
+        lastCueFile.set(kind, chosen)
+        return chosen
+      }
+
       const playCue = (kind) => {
         /* The poller also feeds the status label, so it stays up even when the sounds
            are switched off — the *sound* is what this line gates. */
@@ -2342,7 +2380,7 @@ window.__ModuleLoader__.load({
         if (inventory === null || inventory.cues === undefined) {
           return
         }
-        const file = inventory.cues[kind]
+        const file = pickCueClip(inventory.cues, kind)
         if (file === undefined || file === null) {
           return
         }
