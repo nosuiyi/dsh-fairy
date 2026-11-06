@@ -2,7 +2,7 @@
 
 本文件记录 `dsh-skin-hdd-fairy` 的对外变更。格式参考 Keep a Changelog，版本语义参考 semver。
 
-## 未发布
+## 0.3.1 — 2026-11-06
 
 ### 新增
 
