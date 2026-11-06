@@ -157,7 +157,7 @@ window.__ModuleLoader__.load({
       revealBudgetMs: 4000,
       revealBudgetNoVideoMs: 6000,
       /** How long the backdrop curtain stays closed before it opens from the centre. */
-      coverMinMs: 1500,
+      coverMinMs: 1000,
       gather: 430,
       fly: 1400,
       fadeOut: 520,
