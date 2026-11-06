@@ -162,6 +162,14 @@ window.__ModuleLoader__.load({
       coverMinMs: 900,
       /** Cover fade-out; the emblem and the plate start as it leaves. */
       coverSwapMs: 620,
+      /**
+       * Head start for the plate's radial mask before the emblem pops in.
+       *
+       * With both on the same tick the eye reads "emblem first, plate follows"; the
+       * recording showed exactly that. A ~quarter second makes the ring visibly the
+       * thing that brings the emblem out.
+       */
+      emblemAfterRingMs: 240,
       /** Never wait longer than this for the plate image before showing the scene. */
       coverMaxMs: 2000,
       gather: 430,
@@ -2271,7 +2279,13 @@ window.__ModuleLoader__.load({
               probe.onerror = null
               resolve(ok)
             }
-            probe.onload = () => finish(true)
+            probe.onload = () => {
+              /* `load` means the bytes arrived; `decode()` means the bitmap is ready to
+                 paint. Without the second step the mask started expanding while the
+                 plate was still being decoded, so the ring visibly lagged the emblem. */
+              if (typeof probe.decode === 'function') probe.decode().then(() => finish(true), () => finish(true))
+              else finish(true)
+            }
             probe.onerror = () => finish(false)
             probe.src = `/hdd/asset?path=${encodeURIComponent(fieldName)}`
             after(TIMING.coverMaxMs, () => finish(false))
@@ -2324,24 +2338,34 @@ window.__ModuleLoader__.load({
         }
 
         /**
-         * Put the emblem and the plate on screen and start the timeline.
+         * Put the plate (and then the emblem) on screen and start the timeline.
          *
-         * Split out because the no-clip route runs it *after* the backdrop cover has
-         * faded, while the clip route runs it immediately.
+         * On the cover route the order matters: the radial mask gets a head start, and
+         * the emblem pops *into* an already-opening ring. Doing both on the same tick
+         * read as "the emblem brought the plate"; a ~240ms lead makes it read as "the
+         * ring brought the emblem", which is the effect the recording asked for.
          */
         const mountScene = () => {
           if (disposed) return
+          const startEmblem = () => {
+            if (disposed) return
+            root.appendChild(holder)
+            beginEmblem()
+            startTimeline()
+          }
           if (fieldName !== null) {
             field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
-            /* Cover route: the plate opens from the centre with the emblem; the plain
-               route keeps the soft whole-layer fade it always had. */
+            /* Cover route: the plate opens from the centre; the plain route keeps the
+               soft whole-layer fade it always had. */
             if (coverActive) field.setAttribute('data-reveal', 'mask')
             root.appendChild(field)
-            after(30, () => field.setAttribute('data-on', 'true'))
+            after(20, () => field.setAttribute('data-on', 'true'))
           }
-          root.appendChild(holder)
-          beginEmblem()
-          startTimeline()
+          if (coverActive && fieldName !== null) {
+            after(TIMING.emblemAfterRingMs, startEmblem)
+            return
+          }
+          startEmblem()
         }
 
         const startTimeline = () => {
