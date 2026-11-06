@@ -158,6 +158,12 @@ window.__ModuleLoader__.load({
        */
       revealBudgetMs: 4000,
       revealBudgetNoVideoMs: 6000,
+      /** How long the still backdrop holds as a loading cover before handing over. */
+      coverMinMs: 900,
+      /** Cover fade-out; the emblem and the plate start as it leaves. */
+      coverSwapMs: 620,
+      /** Never wait longer than this for the plate image before showing the scene. */
+      coverMaxMs: 2000,
       gather: 430,
       fly: 1400,
       fadeOut: 520,
@@ -2106,6 +2112,8 @@ window.__ModuleLoader__.load({
         if (disposed) return
         /** Which route this splash took; decides how long the exit may wait for the shell. */
         let usedClip = false
+        /** True while a still backdrop is acting as the loading cover (no clip route). */
+        let coverActive = false
         if (inventory === null) {
           report('assets-missing', { reason: 'the skin host is not answering /hdd/info' })
           hint.textContent = '未检测到素材包：本次仅显示徽记。'
@@ -2197,10 +2205,16 @@ window.__ModuleLoader__.load({
           }
         } else if (inventory.backdrop) {
           /* The backdrop is the canvas in both `auto` (when there is no clip) and
-             `novideo` (when the clip is deliberately skipped). */
+             `novideo` (when the clip is deliberately skipped).
+           *
+           * It is a *cover*, not the scene: it holds the frame while the drawn plate
+           * decodes, then fades away as the emblem and the plate fade in. A 936 KB PNG
+           * is not on screen 30ms after being referenced, and without a cover that gap
+           * shows as an empty dark rectangle. */
           backdrop.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(inventory.backdrop)}")`
           backdrop.setAttribute('data-on', 'true')
           root.appendChild(backdrop)
+          coverActive = true
         } else {
           /* No clip, no backdrop: this is the SHIPPED default, not a failure. The mark
              below is the whole splash, so nothing is added here — a "file not found"
@@ -2218,11 +2232,23 @@ window.__ModuleLoader__.load({
            callback — no emblem, no timeline, and the splash sat until the 15s
            backstop tore it down (a hint with no mark, then a long dark wait). */
         const fieldName = inventory !== null && typeof inventory.field === 'string' ? inventory.field : null
-        if (fieldName !== null) {
-          field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
-          root.appendChild(field)
-          after(30, () => field.setAttribute('data-on', 'true'))
-        }
+        /* The plate is a background image on a div, so "is it there yet?" is not a DOM
+           event. Preloading it through an Image gives a real load/error callback; the
+           cover below waits for it instead of revealing an empty plate. */
+        const plateReady = fieldName === null
+          ? Promise.resolve(false)
+          : new Promise((resolve) => {
+            const probe = new Image()
+            const finish = (ok) => {
+              probe.onload = null
+              probe.onerror = null
+              resolve(ok)
+            }
+            probe.onload = () => finish(true)
+            probe.onerror = () => finish(false)
+            probe.src = `/hdd/asset?path=${encodeURIComponent(fieldName)}`
+            after(TIMING.coverMaxMs, () => finish(false))
+          })
         root.appendChild(holder)
         beginEmblem()
 
@@ -2264,22 +2290,66 @@ window.__ModuleLoader__.load({
           )
         }
 
-        after(TIMING.greetingAt, () => {
+        /**
+         * Put the emblem and the plate on screen and start the timeline.
+         *
+         * Split out because the no-clip route runs it *after* the backdrop cover has
+         * faded, while the clip route runs it immediately.
+         */
+        const mountScene = () => {
           if (disposed) return
-          if (greeting === null) {
-            after(TIMING.holdAfter, exit)
-            return
+          if (fieldName !== null) {
+            field.style.backgroundImage = `url("/hdd/asset?path=${encodeURIComponent(fieldName)}")`
+            root.appendChild(field)
+            after(30, () => field.setAttribute('data-on', 'true'))
           }
-          const spoken = playGreeting().then(() => {
+          root.appendChild(holder)
+          beginEmblem()
+          startTimeline()
+        }
+
+        const startTimeline = () => {
+          after(TIMING.greetingAt, () => {
             if (disposed) return
-            after(TIMING.holdAfter, exit)
+            if (greeting === null) {
+              after(TIMING.holdAfter, exit)
+              return
+            }
+            const spoken = playGreeting().then(() => {
+              if (disposed) return
+              after(TIMING.holdAfter, exit)
+            })
+            after(TIMING.maxHold, exit)
+            void spoken
+            /* With a highlight plate the flight follows the plate's fade, not the end
+               of the greeting: the image is what leaves, the emblem is what stays. */
+            if (fieldName !== null) after(TIMING.fieldHoldMs, exit)
           })
-          after(TIMING.maxHold, exit)
-          void spoken
-          /* With a highlight plate the flight follows the plate's fade, not the end
-             of the greeting: the image is what leaves, the emblem is what stays. */
-          if (fieldName !== null) after(TIMING.fieldHoldMs, exit)
-        })
+        }
+
+        if (coverActive) {
+          /* Cover sequence: the backdrop holds the frame for at least `coverMinMs` (its
+             own fade-in is 620ms — switching sooner reads as a flash), and until the
+             plate has actually decoded. Then the cover fades out underneath the emblem
+             and the plate fading in. */
+          const coveringSince = typeof performance === 'object' ? performance.now() : Date.now()
+          void plateReady.then((plateLoaded) => {
+            if (disposed) return
+            const waited = (typeof performance === 'object' ? performance.now() : Date.now()) - coveringSince
+            const wait = Math.max(0, TIMING.coverMinMs - waited)
+            after(wait, () => {
+              if (disposed) return
+              report('cover-handoff', { plateLoaded, waitedMs: Math.round(waited) })
+              backdrop.setAttribute('data-on', 'false')
+              /* The plate/emblem start while the cover is still leaving: one cross-fade
+                 instead of "cover gone, then a dark beat, then the scene". */
+              after(TIMING.coverSwapMs, mountScene)
+            })
+          })
+          return
+        }
+
+        mountScene()
       })
     }
 
