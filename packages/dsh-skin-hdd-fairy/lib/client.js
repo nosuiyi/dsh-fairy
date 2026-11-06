@@ -1936,6 +1936,9 @@ window.__ModuleLoader__.load({
 
       let disposed = false
       const timers = []
+      /* One clock for the whole splash, so every phase report is comparable. */
+      const splashStartedAt = typeof performance === 'object' ? performance.now() : Date.now()
+      const splashNow = () => (typeof performance === 'object' ? performance.now() : Date.now()) - splashStartedAt
       const after = (ms, run) => {
         timers.push(window.setTimeout(() => {
           if (!disposed) run()
@@ -2349,6 +2352,7 @@ window.__ModuleLoader__.load({
           if (disposed) return
           const startEmblem = () => {
             if (disposed) return
+            report('emblem-start', { at: Math.round(splashNow()), ringLead: TIMING.emblemAfterRingMs })
             root.appendChild(holder)
             beginEmblem()
             startTimeline()
@@ -2359,7 +2363,25 @@ window.__ModuleLoader__.load({
                soft whole-layer fade it always had. */
             if (coverActive) field.setAttribute('data-reveal', 'mask')
             root.appendChild(field)
-            after(20, () => field.setAttribute('data-on', 'true'))
+            after(20, () => {
+              if (disposed) return
+              report('plate-start', { at: Math.round(splashNow()) })
+              field.setAttribute('data-on', 'true')
+            })
+            /* Does the radial mask actually animate? A registered custom property is
+               supposed to, but a silent snap would look exactly like "the ring arrives
+               late", so measure the transition end instead of assuming. */
+            if (coverActive) {
+              const onEnd = (event) => {
+                if (event.target !== field) return
+                field.removeEventListener('transitionend', onEnd)
+                report('plate-transition', {
+                  prop: event.propertyName,
+                  at: Math.round(splashNow()),
+                })
+              }
+              field.addEventListener('transitionend', onEnd)
+            }
           }
           if (coverActive && fieldName !== null) {
             after(TIMING.emblemAfterRingMs, startEmblem)
