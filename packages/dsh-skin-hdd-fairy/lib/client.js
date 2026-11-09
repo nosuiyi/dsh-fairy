@@ -501,21 +501,19 @@ window.__ModuleLoader__.load({
       '  position: absolute; inset: 0; width: 100%; height: 100%;',
       '  display: block; background: #05080e;',
       '}',
-      /* The drawn highlight plate the emblem sits on after the animation is cut.
+      /* The emblem's background art (the "plate").
          It fades in with the emblem and fades out before the emblem flies away.
-         The entrance grows from the centre (`scale`) instead of a radial mask: mask and
-         custom-property transitions are main-thread only, and the shell's own boot work
-         stalled them by ~1s, so the "ring" arrived long after the emblem. Transform and
-         opacity are compositor animations and keep their timing while the shell boots. */
+         A plain opacity fade on purpose: the video route shows this layer appearing on
+         screen, and a scale-up there reads as the plate "popping". The curtain route
+         does not need an entrance at all — that plate is mounted underneath the backdrop
+         and is uncovered by the opening hole. */
       '[data-hdd-field] {',
       '  position: absolute; inset: 0;',
       '  background-position: center; background-size: cover; background-repeat: no-repeat;',
       '  opacity: 0;',
-      '  transform: scale(0.04);',
-      '  transform-origin: 50% 50%;',
-      '  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 620ms ease-out;',
+      '  transition: opacity 620ms ease-out;',
       '}',
-      '[data-hdd-field][data-on="true"] { opacity: 1; transform: scale(1); }',
+      '[data-hdd-field][data-on="true"] { opacity: 1; }',
       '[data-hdd-field][data-on="false"] { opacity: 0; transition: opacity 1150ms ease-in; }',
       /* ---- radial mask reveal (no-clip route only) ----
          The emblem pops out of the centre; the plate should come from the same place and
